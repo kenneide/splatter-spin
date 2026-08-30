@@ -228,6 +228,29 @@ describe("Paint reservoir", () => {
     expect(large[0].radiusMeters).toBeCloseTo(small[0].radiusMeters * 2, 10);
   });
 
+  it("varies drop size independently from landing scatter", () => {
+    const uniform = projectInitialPaintMarks(
+      {
+        ...defaultConfig,
+        randomness: 0,
+        dropSizeVariation: 0,
+      },
+      12,
+    );
+    const varied = projectInitialPaintMarks(
+      {
+        ...defaultConfig,
+        randomness: 0,
+        dropSizeVariation: 1,
+      },
+      12,
+    );
+    expect(new Set(uniform.map((mark) => mark.radiusMeters)).size).toBe(1);
+    expect(
+      new Set(varied.map((mark) => mark.radiusMeters)).size,
+    ).toBeGreaterThan(1);
+  });
+
   it("bounds rendered particles for dense microdroplet flow", () => {
     const simulation = new Simulation({
       ...defaultConfig,

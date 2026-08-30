@@ -418,7 +418,7 @@ export class PaintSource {
         this.config.referenceDropletVolumeMilliliters * 1e-6;
       const sizeFactor =
         Math.cbrt(releasedVolume / referenceDropletVolume) *
-        (1 + this.random.signed() * 0.35 * this.config.randomness);
+        (1 + this.random.signed() * 0.5 * this.config.dropSizeVariation);
       const scatterX =
         this.random.signed() *
         this.config.maximumScatterMeters *

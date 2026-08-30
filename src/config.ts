@@ -9,6 +9,7 @@ export interface SimulationConfig {
   holeDiameterMillimeters: number;
   durationSeconds: number;
   randomness: number;
+  dropSizeVariation: number;
   seed: number;
   gravityMetersPerSecondSquared: number;
   fixedTimeStepSeconds: number;
@@ -44,6 +45,7 @@ export interface PendulumConfig {
   holeDiameterMillimeters: number;
   dropletVolumeMilliliters: number;
   randomness: number;
+  dropSizeVariation: number;
   positionXMeters: number;
   positionYMeters: number;
   positionZMeters: number;
@@ -68,6 +70,7 @@ export const defaultConfig: SimulationConfig = {
   holeDiameterMillimeters: 1.5,
   durationSeconds: 24,
   randomness: 0.45,
+  dropSizeVariation: 0.4,
   seed: 2026,
   gravityMetersPerSecondSquared: 9.81,
   fixedTimeStepSeconds: 1 / 120,
@@ -104,6 +107,7 @@ export const defaultPendulumConfig: PendulumConfig = {
   holeDiameterMillimeters: defaultConfig.holeDiameterMillimeters,
   dropletVolumeMilliliters: defaultConfig.dropletVolumeMilliliters,
   randomness: defaultConfig.randomness,
+  dropSizeVariation: defaultConfig.dropSizeVariation,
   positionXMeters: defaultConfig.pivotOffsetXMeters,
   positionYMeters: defaultConfig.pivotOffsetZMeters,
   positionZMeters: defaultConfig.pivotOffsetHeightMeters,
@@ -135,6 +139,7 @@ export function simulationConfigForPendulum(
     holeDiameterMillimeters: pendulum.holeDiameterMillimeters,
     dropletVolumeMilliliters: pendulum.dropletVolumeMilliliters,
     randomness: pendulum.randomness,
+    dropSizeVariation: pendulum.dropSizeVariation,
     durationSeconds: project.durationSeconds,
     seed: (project.seed + index) | 0,
     canvasWidthMeters: project.canvas.widthMeters,
@@ -193,6 +198,13 @@ export function validateConfig(config: SimulationConfig): string[] {
     config.randomness > 1
   ) {
     errors.push("Randomness must be between 0 and 1.");
+  }
+  if (
+    !Number.isFinite(config.dropSizeVariation) ||
+    config.dropSizeVariation < 0 ||
+    config.dropSizeVariation > 1
+  ) {
+    errors.push("Drop size variation must be between 0 and 1.");
   }
   if (!Number.isInteger(config.seed)) errors.push("Seed must be an integer.");
   if (!Number.isInteger(config.maximumRenderedDropsPerStep))
@@ -305,6 +317,7 @@ function simulationToPendulumConfig(config: SimulationConfig): PendulumConfig {
     holeDiameterMillimeters: config.holeDiameterMillimeters,
     dropletVolumeMilliliters: config.dropletVolumeMilliliters,
     randomness: config.randomness,
+    dropSizeVariation: config.dropSizeVariation,
     positionXMeters: config.pivotOffsetXMeters,
     positionYMeters: config.pivotOffsetZMeters,
     positionZMeters: config.pivotOffsetHeightMeters,

@@ -45,6 +45,7 @@ Before a run starts, dashed rings project the first calculated impacts from ever
       "holeDiameterMillimeters": 1.5,
       "dropletVolumeMilliliters": 0.01,
       "randomness": 0.45,
+      "dropSizeVariation": 0.4,
       "positionXMeters": 0,
       "positionYMeters": 0,
       "positionZMeters": 0
@@ -78,7 +79,7 @@ It is integrated with fourth-order Runge-Kutta at a fixed 1/120-second timestep.
 
 Each drop begins at the paint container with both of its current horizontal velocity components and zero vertical velocity. It then follows constant-gravity ballistic motion without air resistance. The exact positive root of the height equation determines when it intersects the canvas, avoiding timestep-sized landing errors. A seeded Mulberry32 generator supplies small symmetric variations in mark radius and both landing coordinates.
 
-Reservoir outflow follows Torricelli's law, `Q = Cd Ahole √(2gh)`, using the remaining volume and a fixed container cross-section to determine paint head `h`. Emitted volume accumulates into user-sized droplets, allowing many droplets to be airborne concurrently even with a fine outlet. Radius scales with the cube root of volume. To keep microdroplet streams responsive, dense output is deterministically sampled to at most 24 rendered particles per physics step while the full paint volume is still deducted; as flow slows below that threshold, individual drips are represented one-for-one. This models draining and cadence rather than detailed paint viscosity or surface tension.
+Reservoir outflow follows Torricelli's law, `Q = Cd Ahole √(2gh)`, using the remaining volume and a fixed container cross-section to determine paint head `h`. Emitted volume accumulates into user-sized droplets, allowing many droplets to be airborne concurrently even with a fine outlet. Radius scales with the cube root of volume, then receives an independent seeded size variation configured per pendulum; landing scatter remains a separate control. To keep microdroplet streams responsive, dense output is deterministically sampled to at most 24 rendered particles per physics step while the full paint volume is still deducted; as flow slows below that threshold, individual drips are represented one-for-one. This models draining and cadence rather than detailed paint viscosity or surface tension.
 
 The configured duration controls pendulum motion and paint emission. Once it is reached, already-released drops continue until they hit the canvas; only then is the run complete.
 

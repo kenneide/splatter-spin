@@ -34,7 +34,8 @@ app.innerHTML = `
             <div class="field field-pair"><div><label for="color">Paint</label><input id="color" name="paintColor" type="color"></div><div><label for="paint-amount">Paint (ml)</label><input id="paint-amount" name="initialPaintMilliliters" type="number" min="1" max="1000" step="5"></div></div>
             <div class="field"><label for="hole-size">Hole diameter (mm)</label><input id="hole-size" name="holeDiameterMillimeters" type="number" min="0.1" max="6" step="0.05"></div>
             <div class="field"><label for="drop-size">Drop size <output id="drop-size-value"></output></label><input id="drop-size" name="dropletVolumeMilliliters" type="range" min="-4" max="-1" step="0.05"></div>
-            <div class="field"><label for="randomness">Randomness <output id="randomness-value"></output></label><input id="randomness" name="randomness" type="range" min="0" max="1" step="0.01"></div>
+            <div class="field"><label for="randomness">Landing scatter <output id="randomness-value"></output></label><input id="randomness" name="randomness" type="range" min="0" max="1" step="0.01"></div>
+            <div class="field"><label for="size-variation">Drop size variation <output id="size-variation-value"></output></label><input id="size-variation" name="dropSizeVariation" type="range" min="0" max="1" step="0.01"></div>
             <button id="add-pendulum" type="button" class="wide-button">+ Add another pendulum</button>
           </form>
         </section>
@@ -101,6 +102,7 @@ function populatePendulum(config: PendulumConfig): void {
     "initialPaintMilliliters",
     "holeDiameterMillimeters",
     "randomness",
+    "dropSizeVariation",
     "positionXMeters",
     "positionYMeters",
     "positionZMeters",
@@ -135,6 +137,8 @@ function updateOutputs(): void {
     `${Number(field("initialOrbitSpeedRadiansPerSecond").value).toFixed(2)} rad/s`;
   element("#randomness-value").textContent =
     `${Math.round(Number(field("randomness").value) * 100)}%`;
+  element("#size-variation-value").textContent =
+    `${Math.round(Number(field("dropSizeVariation").value) * 100)}%`;
   element("#drop-size-value").textContent =
     `${(10 ** Number(field("dropletVolumeMilliliters").value) * 1000).toPrecision(2)} µl`;
 }
@@ -154,6 +158,7 @@ function pendulumFromForm(): PendulumConfig {
     dropletVolumeMilliliters:
       10 ** Number(field("dropletVolumeMilliliters").value),
     randomness: Number(field("randomness").value),
+    dropSizeVariation: Number(field("dropSizeVariation").value),
     positionXMeters: Number(field("positionXMeters").value),
     positionYMeters: Number(field("positionYMeters").value),
     positionZMeters: Number(field("positionZMeters").value),
