@@ -69,7 +69,6 @@ export class Renderer {
     const simulation = simulations[0];
     if (!simulation) return;
     const ctx = this.context;
-    const { config } = simulation;
     const margin = 34;
     const paintingRegionTop = this.cssHeight * 0.56;
     const paintingAvailableHeight = this.cssHeight - paintingRegionTop - margin;
@@ -83,15 +82,25 @@ export class Renderer {
     const paintingTop =
       paintingRegionTop + (paintingAvailableHeight - paintingHeight) / 2;
     const canvasY = paintingRegionTop - 18;
-    const worldHeight = config.pivotHeightMeters + 0.32;
+    const worldHeight =
+      Math.max(
+        ...simulations.map(
+          (item) =>
+            item.config.pivotHeightMeters + item.config.pivotOffsetHeightMeters,
+        ),
+      ) + 0.32;
     const physicsScale = Math.min(
       (this.cssWidth - margin * 2) / canvasConfig.widthMeters,
       (canvasY - margin) / worldHeight,
     );
     const centerX = this.cssWidth / 2;
-    const toScreen = (xMeters: number, yMeters: number): [number, number] => [
-      centerX + xMeters * physicsScale,
-      canvasY - yMeters * physicsScale,
+    const toScreen = (
+      xMeters: number,
+      yMeters: number,
+      zMeters = 0,
+    ): [number, number] => [
+      centerX + (xMeters + zMeters * 0.28) * physicsScale,
+      canvasY - yMeters * physicsScale + zMeters * 0.12 * physicsScale,
     ];
 
     ctx.clearRect(0, 0, this.cssWidth, this.cssHeight);
@@ -109,10 +118,24 @@ export class Renderer {
     ctx.fillStyle = glow;
     ctx.fillRect(0, 0, this.cssWidth, this.cssHeight);
 
-    const physicsCanvasWidth = canvasConfig.widthMeters * physicsScale;
-    const physicsCanvasLeft = centerX - physicsCanvasWidth / 2;
+    const canvasCorners = [
+      toScreen(-canvasConfig.widthMeters / 2, 0, -canvasConfig.depthMeters / 2),
+      toScreen(canvasConfig.widthMeters / 2, 0, -canvasConfig.depthMeters / 2),
+      toScreen(canvasConfig.widthMeters / 2, 0, canvasConfig.depthMeters / 2),
+      toScreen(-canvasConfig.widthMeters / 2, 0, canvasConfig.depthMeters / 2),
+    ];
     ctx.fillStyle = "rgba(247, 243, 232, 0.08)";
-    ctx.fillRect(physicsCanvasLeft, canvasY - 2, physicsCanvasWidth, 4);
+    ctx.strokeStyle = "rgba(247, 243, 232, 0.18)";
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([2, 7]);
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(...canvasCorners[0]);
+    for (const corner of canvasCorners.slice(1)) ctx.lineTo(...corner);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.setLineDash([]);
 
     // The full physical canvas is fitted below at its true width/depth ratio.
     ctx.fillStyle = canvasConfig.color;
@@ -175,7 +198,11 @@ export class Renderer {
 
     for (const item of simulations)
       for (const drop of item.drops) {
-        const [x, y] = toScreen(drop.position.xMeters, drop.position.yMeters);
+        const [x, y] = toScreen(
+          drop.position.xMeters,
+          drop.position.yMeters,
+          drop.position.zMeters,
+        );
         ctx.fillStyle = drop.color;
         ctx.beginPath();
         ctx.arc(
@@ -191,12 +218,16 @@ export class Renderer {
     for (const item of simulations) {
       const [pivotX, pivotY] = toScreen(
         item.config.pivotOffsetXMeters,
-        item.config.pivotHeightMeters,
+        item.config.pivotHeightMeters + item.config.pivotOffsetHeightMeters,
+        item.config.pivotOffsetZMeters,
       );
-      const bob = item.pendulum.bobPosition(item.config.pivotHeightMeters);
+      const bob = item.pendulum.bobPosition(
+        item.config.pivotHeightMeters + item.config.pivotOffsetHeightMeters,
+      );
       const [bobX, bobY] = toScreen(
         bob.xMeters + item.config.pivotOffsetXMeters,
         bob.yMeters,
+        bob.zMeters + item.config.pivotOffsetZMeters,
       );
       const flowFraction = item.paintSource.flowFraction;
       if (item.status === "running" && flowFraction > 0.08) {

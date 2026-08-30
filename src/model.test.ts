@@ -326,4 +326,24 @@ describe("configuration JSON", () => {
     expect(shiftedMark.xMeters - originMark.xMeters).toBeCloseTo(0.35, 10);
     expect(shiftedMark.zMeters - originMark.zMeters).toBeCloseTo(-0.2, 10);
   });
+
+  it("raises the physical drop release point with pendulum Z position", () => {
+    const low = new Simulation({
+      ...defaultConfig,
+      pivotOffsetHeightMeters: 0,
+    });
+    const high = new Simulation({
+      ...defaultConfig,
+      pivotOffsetHeightMeters: 0.6,
+    });
+    low.start();
+    high.start();
+    for (let step = 0; step < 10 && low.drops.length === 0; step += 1) {
+      low.step();
+      high.step();
+    }
+    expect(
+      high.drops[0].position.yMeters - low.drops[0].position.yMeters,
+    ).toBeCloseTo(0.6, 10);
+  });
 });

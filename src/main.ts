@@ -30,7 +30,7 @@ app.innerHTML = `
             <div class="field"><label for="azimuth">Initial azimuth <output id="azimuth-value"></output></label><input id="azimuth" name="initialAzimuthDegrees" type="range" min="-180" max="180" step="1"></div>
             <div class="field"><label for="orbit">Orbit speed <output id="orbit-value"></output></label><input id="orbit" name="initialOrbitSpeedRadiansPerSecond" type="range" min="-3" max="3" step="0.05"></div>
             <div class="field field-pair"><div><label for="length">Length (m)</label><input id="length" name="lengthMeters" type="number" min="0.4" max="1.5" step="0.05"></div><div><label for="damping">Damping (s⁻¹)</label><input id="damping" name="dampingPerSecond" type="number" min="0" max="1" step="0.005"></div></div>
-            <div class="field field-pair"><div><label for="position-x">Position X (m)</label><input id="position-x" name="positionXMeters" type="number" min="-10" max="10" step="0.1"></div><div><label for="position-y">Position Y (m)</label><input id="position-y" name="positionYMeters" type="number" min="-10" max="10" step="0.1"></div></div>
+            <div class="field field-triple"><div><label for="position-x">X (m)</label><input id="position-x" name="positionXMeters" type="number" min="-10" max="10" step="0.1"></div><div><label for="position-y">Y (m)</label><input id="position-y" name="positionYMeters" type="number" min="-10" max="10" step="0.1"></div><div><label for="position-z">Z / height (m)</label><input id="position-z" name="positionZMeters" type="number" min="-1" max="10" step="0.1"></div></div>
             <div class="field field-pair"><div><label for="color">Paint</label><input id="color" name="paintColor" type="color"></div><div><label for="paint-amount">Paint (ml)</label><input id="paint-amount" name="initialPaintMilliliters" type="number" min="1" max="1000" step="5"></div></div>
             <div class="field"><label for="hole-size">Hole diameter (mm)</label><input id="hole-size" name="holeDiameterMillimeters" type="number" min="0.1" max="6" step="0.05"></div>
             <div class="field"><label for="drop-size">Drop size <output id="drop-size-value"></output></label><input id="drop-size" name="dropletVolumeMilliliters" type="range" min="-4" max="-1" step="0.05"></div>
@@ -103,6 +103,7 @@ function populatePendulum(config: PendulumConfig): void {
     "randomness",
     "positionXMeters",
     "positionYMeters",
+    "positionZMeters",
   ];
   for (const key of ordinary) field(key).value = String(config[key]);
   field("dropletVolumeMilliliters").value = String(
@@ -155,6 +156,7 @@ function pendulumFromForm(): PendulumConfig {
     randomness: Number(field("randomness").value),
     positionXMeters: Number(field("positionXMeters").value),
     positionYMeters: Number(field("positionYMeters").value),
+    positionZMeters: Number(field("positionZMeters").value),
   };
 }
 
@@ -188,7 +190,7 @@ function renderPendulumList(): void {
     .map(
       (pendulum, index) => `
         <div class="pendulum-item ${index === selectedPendulumIndex ? "selected" : ""}" data-index="${index}">
-          <button type="button" class="select-pendulum" data-index="${index}"><i style="background:${pendulum.paintColor}"></i><span>Pendulum ${index + 1}</span><small>${pendulum.positionXMeters.toFixed(1)}, ${pendulum.positionYMeters.toFixed(1)}</small></button>
+          <button type="button" class="select-pendulum" data-index="${index}"><i style="background:${pendulum.paintColor}"></i><span>Pendulum ${index + 1}</span><small>${pendulum.positionXMeters.toFixed(1)}, ${pendulum.positionYMeters.toFixed(1)}, ${pendulum.positionZMeters.toFixed(1)}</small></button>
           <button type="button" class="remove-pendulum" data-index="${index}" aria-label="Remove pendulum ${index + 1}">×</button>
         </div>`,
     )
@@ -198,6 +200,12 @@ function renderPendulumList(): void {
 function refreshPreview(): void {
   projectedMarks = createProjections(project);
   renderPendulumList();
+}
+
+function preparePausedInitialState(): void {
+  refreshPreview();
+  if (!simulations.some((simulation) => simulation.status === "running"))
+    rebuildSimulations(false);
 }
 
 function rebuildSimulations(start: boolean): void {
@@ -211,14 +219,14 @@ pendulumForm.addEventListener("input", () => {
   updateOutputs();
   window.clearTimeout(projectionUpdateTimer);
   projectionUpdateTimer = window.setTimeout(() => {
-    if (commitControls()) refreshPreview();
+    if (commitControls()) preparePausedInitialState();
   }, 120);
 });
 
 element("#canvas-form").addEventListener("input", () => {
   window.clearTimeout(projectionUpdateTimer);
   projectionUpdateTimer = window.setTimeout(() => {
-    if (commitControls()) refreshPreview();
+    if (commitControls()) preparePausedInitialState();
   }, 120);
 });
 
@@ -226,7 +234,7 @@ for (const selector of ["#seed", "#duration"]) {
   element(selector).addEventListener("input", () => {
     window.clearTimeout(projectionUpdateTimer);
     projectionUpdateTimer = window.setTimeout(() => {
-      if (commitControls()) refreshPreview();
+      if (commitControls()) preparePausedInitialState();
     }, 120);
   });
 }
@@ -238,7 +246,7 @@ element("#add-pendulum").addEventListener("click", () => {
   );
   selectedPendulumIndex = project.pendulums.length - 1;
   populatePendulum(project.pendulums[selectedPendulumIndex]);
-  refreshPreview();
+  preparePausedInitialState();
 });
 
 element("#pendulum-list").addEventListener("click", (event) => {
@@ -262,7 +270,7 @@ element("#pendulum-list").addEventListener("click", (event) => {
       project.pendulums.length - 1,
     );
     populatePendulum(project.pendulums[selectedPendulumIndex]);
-    refreshPreview();
+    preparePausedInitialState();
   }
 });
 
@@ -382,6 +390,12 @@ function updateStatus(): void {
     : complete
       ? "Replay"
       : "Start";
+  for (const control of Array.from(pendulumForm.elements))
+    (control as HTMLInputElement | HTMLButtonElement).disabled = running;
+  for (const button of document.querySelectorAll<HTMLButtonElement>(
+    ".select-pendulum, .remove-pendulum",
+  ))
+    button.disabled = running;
 }
 
 function frame(nowMilliseconds: number): void {

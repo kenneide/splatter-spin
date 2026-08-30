@@ -167,6 +167,11 @@ h1 {
   grid-template-columns: 0.7fr 1.3fr;
   gap: 12px;
 }
+.field-triple {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.35fr;
+  gap: 8px;
+}
 input[type="number"] {
   width: 100%;
   border: 1px solid rgba(255, 255, 255, 0.12);
@@ -229,6 +234,14 @@ button {
 button:hover {
   border-color: #8f78ff;
   transform: translateY(-1px);
+}
+button:disabled,
+input:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+}
+button:disabled:hover {
+  transform: none;
 }
 button.primary {
   border-color: transparent;

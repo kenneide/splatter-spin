@@ -24,6 +24,7 @@ export interface SimulationConfig {
   maximumRenderedDropsPerStep: number;
   pivotOffsetXMeters: number;
   pivotOffsetZMeters: number;
+  pivotOffsetHeightMeters: number;
 }
 
 export interface CanvasConfig {
@@ -45,6 +46,7 @@ export interface PendulumConfig {
   randomness: number;
   positionXMeters: number;
   positionYMeters: number;
+  positionZMeters: number;
 }
 
 export interface ProjectConfig {
@@ -81,6 +83,7 @@ export const defaultConfig: SimulationConfig = {
   maximumRenderedDropsPerStep: 24,
   pivotOffsetXMeters: 0,
   pivotOffsetZMeters: 0,
+  pivotOffsetHeightMeters: 0,
 };
 
 export const defaultCanvasConfig: CanvasConfig = {
@@ -103,6 +106,7 @@ export const defaultPendulumConfig: PendulumConfig = {
   randomness: defaultConfig.randomness,
   positionXMeters: defaultConfig.pivotOffsetXMeters,
   positionYMeters: defaultConfig.pivotOffsetZMeters,
+  positionZMeters: defaultConfig.pivotOffsetHeightMeters,
 };
 
 export const defaultProjectConfig: ProjectConfig = {
@@ -137,6 +141,7 @@ export function simulationConfigForPendulum(
     canvasDepthMeters: project.canvas.depthMeters,
     pivotOffsetXMeters: pendulum.positionXMeters,
     pivotOffsetZMeters: pendulum.positionYMeters,
+    pivotOffsetHeightMeters: pendulum.positionZMeters,
   };
 }
 
@@ -174,6 +179,8 @@ export function validateConfig(config: SimulationConfig): string[] {
     errors.push("Pendulum X position must be finite.");
   if (!Number.isFinite(config.pivotOffsetZMeters))
     errors.push("Pendulum Y position must be finite.");
+  if (!Number.isFinite(config.pivotOffsetHeightMeters))
+    errors.push("Pendulum Z position must be finite.");
   if (
     !Number.isFinite(config.dampingPerSecond) ||
     config.dampingPerSecond < 0
@@ -192,7 +199,10 @@ export function validateConfig(config: SimulationConfig): string[] {
     errors.push("Rendered-drop limit must be an integer.");
   if (!/^#[0-9a-f]{6}$/i.test(config.paintColor))
     errors.push("Paint color must be a hex color.");
-  if (config.pivotHeightMeters <= config.pendulumLengthMeters) {
+  if (
+    config.pivotHeightMeters + config.pivotOffsetHeightMeters <=
+    config.pendulumLengthMeters
+  ) {
     errors.push("Pendulum length must leave the container above the canvas.");
   }
   return errors;
@@ -297,5 +307,6 @@ function simulationToPendulumConfig(config: SimulationConfig): PendulumConfig {
     randomness: config.randomness,
     positionXMeters: config.pivotOffsetXMeters,
     positionYMeters: config.pivotOffsetZMeters,
+    positionZMeters: config.pivotOffsetHeightMeters,
   };
 }

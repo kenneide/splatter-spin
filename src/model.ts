@@ -427,7 +427,9 @@ export class PaintSource {
         this.random.signed() *
         this.config.maximumScatterMeters *
         this.config.randomness;
-      const bobPosition = pendulum.bobPosition(this.config.pivotHeightMeters);
+      const bobPosition = pendulum.bobPosition(
+        this.config.pivotHeightMeters + this.config.pivotOffsetHeightMeters,
+      );
       bobPosition.xMeters += this.config.pivotOffsetXMeters;
       bobPosition.zMeters += this.config.pivotOffsetZMeters;
       const bobVelocity = pendulum.bobVelocity();
