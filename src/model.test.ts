@@ -10,6 +10,7 @@ import {
 import {
   PaintDrop,
   Pendulum,
+  projectFuturePaintMarks,
   projectInitialPaintMarks,
   Simulation,
 } from "./model";
@@ -104,6 +105,21 @@ function runToCompletion(seed: number) {
 }
 
 describe("Simulation determinism", () => {
+  it("samples a bounded deterministic future projection", () => {
+    const config = {
+      ...defaultConfig,
+      holeDiameterMillimeters: 6,
+      dropletVolumeMilliliters: 0.0001,
+    };
+    const first = projectFuturePaintMarks(config, 10, 80);
+    const second = projectFuturePaintMarks(config, 10, 80);
+    expect(first).toHaveLength(80);
+    expect(first).toEqual(second);
+    expect(
+      new Set(first.map((mark) => `${mark.xMeters},${mark.zMeters}`)).size,
+    ).toBeGreaterThan(10);
+  });
+
   it("projects the same first marks produced by the real run", () => {
     const config = { ...defaultConfig, durationSeconds: 3, seed: 91 };
     const projected = projectInitialPaintMarks(config, 12);

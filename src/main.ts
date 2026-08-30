@@ -9,7 +9,7 @@ import {
   type PendulumConfig,
   type ProjectConfig,
 } from "./config";
-import { projectInitialPaintMarks, Simulation } from "./model";
+import { projectFuturePaintMarks, Simulation } from "./model";
 import { Renderer } from "./renderer";
 
 const app = document.querySelector<HTMLDivElement>("#app");
@@ -70,10 +70,11 @@ const renderer = new Renderer(canvas);
 let project: ProjectConfig = structuredClone(defaultProjectConfig);
 let selectedPendulumIndex = 0;
 let simulations = createSimulations(project);
-let projectedMarks = createProjections(project);
+let projectedMarks: ReturnType<typeof createProjections> = [];
 let accumulatorSeconds = 0;
 let previousFrameMilliseconds = performance.now();
 let projectionUpdateTimer: number | undefined;
+const projectionHorizonSeconds = 10;
 
 const field = (name: keyof PendulumConfig) =>
   pendulumForm.elements.namedItem(name) as HTMLInputElement;
@@ -88,7 +89,11 @@ function createSimulations(config: ProjectConfig): Simulation[] {
 
 function createProjections(config: ProjectConfig) {
   return config.pendulums.flatMap((_, index) =>
-    projectInitialPaintMarks(simulationConfigForPendulum(config, index), 12),
+    projectFuturePaintMarks(
+      simulationConfigForPendulum(config, index),
+      projectionHorizonSeconds,
+      500,
+    ),
   );
 }
 
@@ -299,7 +304,6 @@ element("#start").addEventListener("click", () => {
   if (simulations.some((simulation) => simulation.elapsedSeconds > 0)) {
     if (simulations.every((simulation) => simulation.status === "complete")) {
       if (!commitControls()) return;
-      refreshPreview();
       rebuildSimulations(true);
       return;
     }
@@ -307,7 +311,6 @@ element("#start").addEventListener("click", () => {
     return;
   }
   if (!commitControls()) return;
-  refreshPreview();
   rebuildSimulations(true);
 });
 
@@ -429,7 +432,12 @@ function frame(nowMilliseconds: number): void {
     }
   }
   previousFrameMilliseconds = nowMilliseconds;
-  renderer.render(simulations, project.canvas, projectedMarks);
+  renderer.render(
+    simulations,
+    project.canvas,
+    projectedMarks,
+    Math.min(project.durationSeconds, projectionHorizonSeconds),
+  );
   updateStatus();
   requestAnimationFrame(frame);
 }
@@ -439,3 +447,6 @@ populatePendulum(project.pendulums[0]);
 renderPendulumList();
 new ResizeObserver(() => renderer.resize()).observe(canvas);
 requestAnimationFrame(frame);
+// Let controls and the first animation frame become interactive before doing
+// forecast work; Start never waits for this projection.
+window.setTimeout(refreshPreview, 0);

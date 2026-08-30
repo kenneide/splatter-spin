@@ -65,6 +65,7 @@ export class Renderer {
     simulations: readonly Simulation[],
     canvasConfig: CanvasConfig,
     projectedMarks: readonly PaintMark[] = [],
+    projectionHorizonSeconds = 10,
   ): void {
     const simulation = simulations[0];
     if (!simulation) return;
@@ -180,7 +181,7 @@ export class Renderer {
       ctx.font = "500 9px Inter, sans-serif";
       ctx.letterSpacing = "0.04em";
       ctx.fillText(
-        `FIRST ${projectedMarks.length} IMPACTS · PROJECTED`,
+        `NEXT ${projectionHorizonSeconds.toFixed(0)}s · ${projectedMarks.length} SAMPLED IMPACTS`,
         paintingLeft + 12,
         paintingTop + paintingHeight - 12,
       );

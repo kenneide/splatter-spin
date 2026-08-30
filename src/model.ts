@@ -567,3 +567,47 @@ export function projectInitialPaintMarks(
   }
   return projection.canvas.marks.slice(0, count).map((mark) => ({ ...mark }));
 }
+
+export function projectFuturePaintMarks(
+  config: SimulationConfig,
+  horizonSeconds = 10,
+  maximumMarks = 500,
+): PaintMark[] {
+  const previewConfig: SimulationConfig = {
+    ...config,
+    durationSeconds: Math.min(config.durationSeconds, horizonSeconds),
+    // A coarser fixed step is sufficient for a visual forecast and keeps
+    // multi-pendulum parameter editing responsive. Full runs remain at 120 Hz.
+    fixedTimeStepSeconds: Math.max(config.fixedTimeStepSeconds, 1 / 30),
+    // Dense streams only need representative particles in the preview.
+    maximumRenderedDropsPerStep: Math.min(
+      config.maximumRenderedDropsPerStep,
+      2,
+    ),
+  };
+  const projection = new Simulation(previewConfig);
+  projection.start();
+  const maximumSteps = Math.ceil(
+    (previewConfig.durationSeconds + 5) / previewConfig.fixedTimeStepSeconds,
+  );
+  for (
+    let step = 0;
+    step < maximumSteps && projection.status !== "complete";
+    step += 1
+  ) {
+    projection.step();
+  }
+
+  const marks = projection.canvas.marks;
+  if (maximumMarks <= 0) return [];
+  if (marks.length <= maximumMarks) return marks.map((mark) => ({ ...mark }));
+  if (maximumMarks === 1) return [{ ...marks[0] }];
+  // Even temporal sampling retains the overall path instead of favoring the
+  // beginning of a dense stream.
+  return Array.from({ length: maximumMarks }, (_, index) => {
+    const sourceIndex = Math.floor(
+      (index * (marks.length - 1)) / (maximumMarks - 1),
+    );
+    return { ...marks[sourceIndex] };
+  });
+}
