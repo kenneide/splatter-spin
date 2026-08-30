@@ -23,6 +23,7 @@ export interface SimulationConfig {
   dropletVolumeMilliliters: number;
   referenceDropletVolumeMilliliters: number;
   maximumRenderedDropsPerStep: number;
+  minimumBobClearanceMeters: number;
   pivotOffsetXMeters: number;
   pivotOffsetZMeters: number;
   pivotOffsetHeightMeters: number;
@@ -84,6 +85,7 @@ export const defaultConfig: SimulationConfig = {
   dropletVolumeMilliliters: 0.01,
   referenceDropletVolumeMilliliters: 0.01,
   maximumRenderedDropsPerStep: 24,
+  minimumBobClearanceMeters: 0.05,
   pivotOffsetXMeters: 0,
   pivotOffsetZMeters: 0,
   pivotOffsetHeightMeters: 0,
@@ -168,6 +170,7 @@ export function validateConfig(config: SimulationConfig): string[] {
     [config.dropletVolumeMilliliters, "Droplet volume"],
     [config.referenceDropletVolumeMilliliters, "Reference droplet volume"],
     [config.maximumRenderedDropsPerStep, "Rendered-drop limit"],
+    [config.minimumBobClearanceMeters, "Bob clearance"],
   ];
 
   for (const [value, label] of finitePositive) {
@@ -212,10 +215,14 @@ export function validateConfig(config: SimulationConfig): string[] {
   if (!/^#[0-9a-f]{6}$/i.test(config.paintColor))
     errors.push("Paint color must be a hex color.");
   if (
-    config.pivotHeightMeters + config.pivotOffsetHeightMeters <=
-    config.pendulumLengthMeters
+    config.pivotHeightMeters +
+      config.pivotOffsetHeightMeters -
+      config.pendulumLengthMeters <
+    config.minimumBobClearanceMeters
   ) {
-    errors.push("Pendulum length must leave the container above the canvas.");
+    errors.push(
+      `Pendulum length must leave ${config.minimumBobClearanceMeters} m clearance above the canvas.`,
+    );
   }
   return errors;
 }

@@ -5,6 +5,7 @@ import {
   parseProjectConfigJson,
   parseSimulationConfigJson,
   simulationConfigForPendulum,
+  validateConfig,
 } from "./config";
 import {
   PaintDrop,
@@ -368,5 +369,21 @@ describe("configuration JSON", () => {
     expect(
       high.drops[0].position.yMeters - low.drops[0].position.yMeters,
     ).toBeCloseTo(0.6, 10);
+  });
+
+  it("derives valid pendulum length from effective pivot height", () => {
+    const tooLong = {
+      ...defaultConfig,
+      pendulumLengthMeters: 1.5,
+      pivotOffsetHeightMeters: -0.2,
+    };
+    expect(validateConfig(tooLong)).toContain(
+      "Pendulum length must leave 0.05 m clearance above the canvas.",
+    );
+    expect(
+      validateConfig({ ...tooLong, pivotOffsetHeightMeters: 0.2 }),
+    ).not.toContain(
+      "Pendulum length must leave 0.05 m clearance above the canvas.",
+    );
   });
 });

@@ -15,6 +15,8 @@ Open the local URL printed by Vite. The controls are grouped into Pendulums, Can
 
 While stopped, valid pendulum edits immediately rebuild the initial-state preview, including every pivot, arm, paint can, and projected impact. The upper physics view uses an oblique projection so both canvas-plane X and Y placement remain visible. Pendulum controls and list actions are disabled while the simulation is running. Pause to re-enable them; editing a paused run resets the artwork to the revised initial state.
 
+The maximum arm length updates from effective pivot height as Z changes, always reserving 0.05 m of clearance above the ground canvas. Lowering Z clamps an overlong value immediately; raising Z makes the additional length available. The same constraint is enforced when loading JSON.
+
 Starting a fresh or completed run applies the current GUI values automatically. Pausing and starting an in-progress run resumes it without resetting.
 
 Initial inclination and azimuth set the starting arm direction, while orbit speed supplies rotation around the pivot. Paint amount sets the initial reservoir volume, hole diameter controls how quickly it drains, and the logarithmic drop-size slider spans 0.1–100 µl per release.
