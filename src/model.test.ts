@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { defaultConfig, parseSimulationConfigJson } from "./config";
+import {
+  defaultConfig,
+  defaultProjectConfig,
+  parseProjectConfigJson,
+  parseSimulationConfigJson,
+  simulationConfigForPendulum,
+} from "./config";
 import {
   PaintDrop,
   Pendulum,
@@ -264,5 +270,42 @@ describe("configuration JSON", () => {
     expect(() =>
       parseSimulationConfigJson(JSON.stringify({ holeDiameterMillimeters: 0 })),
     ).toThrow("Hole diameter must be positive");
+  });
+
+  it("round-trips the compact multi-pendulum project structure", () => {
+    const project = {
+      ...structuredClone(defaultProjectConfig),
+      seed: 42,
+      durationSeconds: 30,
+      pendulums: [
+        { ...defaultProjectConfig.pendulums[0], paintColor: "#e63946" },
+        {
+          ...defaultProjectConfig.pendulums[0],
+          paintColor: "#457b9d",
+          lengthMeters: 1.2,
+        },
+      ],
+    };
+    expect(parseProjectConfigJson(JSON.stringify(project))).toEqual(project);
+    expect(Object.keys(project.pendulums[0])).not.toContain(
+      "gravityMetersPerSecondSquared",
+    );
+  });
+
+  it("derives stable per-pendulum seeds and shared canvas settings", () => {
+    const project = {
+      ...structuredClone(defaultProjectConfig),
+      seed: 42,
+      canvas: { widthMeters: 8, depthMeters: 6, color: "#112233" },
+      pendulums: [
+        { ...defaultProjectConfig.pendulums[0] },
+        { ...defaultProjectConfig.pendulums[0] },
+      ],
+    };
+    const first = simulationConfigForPendulum(project, 0);
+    const second = simulationConfigForPendulum(project, 1);
+    expect([first.seed, second.seed]).toEqual([42, 43]);
+    expect(second.canvasWidthMeters).toBe(8);
+    expect(second.canvasDepthMeters).toBe(6);
   });
 });
