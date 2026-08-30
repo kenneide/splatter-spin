@@ -3,6 +3,14 @@ import type { PaintMark, Simulation } from "./model";
 
 export class Renderer {
   private readonly context: CanvasRenderingContext2D;
+  private paintingCache: HTMLCanvasElement | null = null;
+  private cachedMarkArrays: readonly PaintMark[][] = [];
+  private cachedMarkCounts: number[] = [];
+  private cachedCanvasWidth = 0;
+  private cachedCanvasHeight = 0;
+  private cachedPaintingScale = 0;
+  private cachedCenterX = 0;
+  private cachedCenterY = 0;
   private cssWidth = 0;
   private cssHeight = 0;
 
@@ -194,15 +202,12 @@ export class Renderer {
       );
     }
 
-    for (const item of simulations)
-      this.drawPaintMarks(
-        ctx,
-        item.canvas.marks,
-        centerX,
-        paintingTop + paintingHeight / 2,
-        paintingScale,
-        4,
-      );
+    this.drawCachedPaintMarks(
+      simulations,
+      centerX,
+      paintingTop + paintingHeight / 2,
+      paintingScale,
+    );
 
     for (const item of simulations)
       for (const drop of item.drops) {
@@ -322,6 +327,62 @@ export class Renderer {
       context.fill();
       context.globalAlpha = 1;
     }
+  }
+
+  private drawCachedPaintMarks(
+    simulations: readonly Simulation[],
+    centerX: number,
+    centerY: number,
+    scale: number,
+  ): void {
+    const arrays = simulations.map((item) => item.canvas.marks);
+    const counts = arrays.map((marks) => marks.length);
+    const cacheMatches =
+      this.paintingCache &&
+      this.cachedCanvasWidth === this.cssWidth &&
+      this.cachedCanvasHeight === this.cssHeight &&
+      this.cachedPaintingScale === scale &&
+      this.cachedCenterX === centerX &&
+      this.cachedCenterY === centerY &&
+      arrays.length === this.cachedMarkArrays.length &&
+      arrays.every(
+        (marks, index) =>
+          marks === this.cachedMarkArrays[index] &&
+          counts[index] === this.cachedMarkCounts[index],
+      );
+    if (!cacheMatches) {
+      const cache = document.createElement("canvas");
+      const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+      cache.width = Math.max(1, Math.round(this.cssWidth * pixelRatio));
+      cache.height = Math.max(1, Math.round(this.cssHeight * pixelRatio));
+      const cacheContext = cache.getContext("2d");
+      if (!cacheContext) return;
+      cacheContext.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+      for (const item of simulations)
+        this.drawPaintMarks(
+          cacheContext,
+          item.canvas.marks,
+          centerX,
+          centerY,
+          scale,
+          4,
+        );
+      this.paintingCache = cache;
+      this.cachedMarkArrays = arrays;
+      this.cachedMarkCounts = counts;
+      this.cachedCanvasWidth = this.cssWidth;
+      this.cachedCanvasHeight = this.cssHeight;
+      this.cachedPaintingScale = scale;
+      this.cachedCenterX = centerX;
+      this.cachedCenterY = centerY;
+    }
+    this.context.drawImage(
+      this.paintingCache!,
+      0,
+      0,
+      this.cssWidth,
+      this.cssHeight,
+    );
   }
 }
 
