@@ -99,8 +99,8 @@ This is intentionally a simplified model: the arm is rigid and massless; the bob
 The production build uses relative asset paths and the included workflow deploys `dist` on pushes to `main`.
 
 1. Create a GitHub repository and push this project to it.
-2. In **Settings → Pages**, select **GitHub Actions** as the source.
-3. Push to `main`, or manually run the **Deploy to GitHub Pages** workflow.
+2. Push to `main`, or manually run the **Deploy to GitHub Pages** workflow.
+3. The workflow enables Pages with GitHub Actions on its first run and publishes `dist` on subsequent runs as well.
 
 No repository-name-specific configuration is required. You can verify the static build locally with `npm run build && npm run preview`.
 
