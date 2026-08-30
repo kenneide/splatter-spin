@@ -21,6 +21,8 @@ Before a run starts, dashed rings on the painting surface project the first 24 c
 
 **Save JSON** downloads every visible setting and fixed model parameter as plain configuration data. **Load JSON** validates a saved file, updates the controls and projection, and prepares a paused run. Partial configuration objects are accepted and filled with current defaults.
 
+**Save artwork PNG · 4K** redraws only the accumulated painting—not the interface or projection—to a 4096-pixel-wide PNG. The export preserves the physical canvas aspect ratio, producing a 4096 × 2341 image with the paper background and full-resolution paint marks.
+
 Useful checks:
 
 ```sh

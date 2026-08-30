@@ -34,7 +34,7 @@ app.innerHTML = `
           <div class="field"><label for="randomness">Randomness <output id="randomness-value"></output></label><input id="randomness" name="randomness" type="range" min="0" max="1" step="0.01"></div>
           <p id="form-error" class="error" role="alert"></p>
           <div class="actions"><button id="start" type="button" class="primary">Start</button><button id="reset" type="button">Reset</button><button id="rerun" type="submit">Rerun</button></div>
-          <div class="config-actions"><button id="save-config" type="button">Save JSON</button><button id="load-config" type="button">Load JSON</button><input id="config-file" type="file" accept="application/json,.json" hidden></div>
+          <div class="config-actions"><button id="save-config" type="button">Save JSON</button><button id="load-config" type="button">Load JSON</button><button id="save-artwork" type="button">Save artwork PNG · 4K</button><input id="config-file" type="file" accept="application/json,.json" hidden></div>
         </form>
       </aside>
       <div class="stage-card">
@@ -178,6 +178,34 @@ configFileInput.addEventListener("change", async () => {
       error instanceof Error ? error.message : "Could not load configuration.";
   } finally {
     configFileInput.value = "";
+  }
+});
+
+const saveArtworkButton =
+  document.querySelector<HTMLButtonElement>("#save-artwork")!;
+saveArtworkButton.addEventListener("click", async () => {
+  if (simulation.canvas.marks.length === 0) {
+    document.querySelector("#form-error")!.textContent =
+      "Run the simulation before saving the artwork.";
+    return;
+  }
+  saveArtworkButton.disabled = true;
+  saveArtworkButton.textContent = "Rendering 4K…";
+  try {
+    const blob = await renderer.exportPainting(simulation);
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `splatter-spin-seed-${simulation.config.seed}.png`;
+    link.click();
+    window.setTimeout(() => URL.revokeObjectURL(url), 0);
+    document.querySelector("#form-error")!.textContent = "";
+  } catch (error) {
+    document.querySelector("#form-error")!.textContent =
+      error instanceof Error ? error.message : "Could not export artwork.";
+  } finally {
+    saveArtworkButton.disabled = false;
+    saveArtworkButton.textContent = "Save artwork PNG · 4K";
   }
 });
 

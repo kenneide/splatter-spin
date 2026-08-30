@@ -138,6 +138,11 @@ input[type="color"] {
   font-size: 0.74rem;
   background: transparent;
 }
+.config-actions #save-artwork {
+  grid-column: 1 / -1;
+  color: #dcd7e7;
+  border-color: rgba(143, 120, 255, 0.38);
+}
 button {
   border: 1px solid rgba(255, 255, 255, 0.13);
   border-radius: 9px;

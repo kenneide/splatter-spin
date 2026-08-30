@@ -25,6 +25,41 @@ export class Renderer {
     this.context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
   }
 
+  exportPainting(simulation: Simulation, widthPixels = 4096): Promise<Blob> {
+    const exportCanvas = document.createElement("canvas");
+    exportCanvas.width = widthPixels;
+    exportCanvas.height = Math.round(
+      widthPixels *
+        (simulation.config.canvasDepthMeters /
+          simulation.config.canvasWidthMeters),
+    );
+    const context = exportCanvas.getContext("2d");
+    if (!context) throw new Error("Canvas export is unavailable.");
+
+    const paper = context.createLinearGradient(0, 0, 0, exportCanvas.height);
+    paper.addColorStop(0, "#fffdf6");
+    paper.addColorStop(1, "#e8e1d2");
+    context.fillStyle = paper;
+    context.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+
+    const scale = widthPixels / simulation.config.canvasWidthMeters;
+    this.drawPaintMarks(
+      context,
+      simulation.canvas.marks,
+      exportCanvas.width / 2,
+      exportCanvas.height / 2,
+      scale,
+      2,
+    );
+
+    return new Promise((resolve, reject) => {
+      exportCanvas.toBlob((blob) => {
+        if (blob) resolve(blob);
+        else reject(new Error("The browser could not encode the artwork."));
+      }, "image/png");
+    });
+  }
+
   render(
     simulation: Simulation,
     projectedMarks: readonly PaintMark[] = [],
@@ -131,28 +166,14 @@ export class Renderer {
       );
     }
 
-    for (const [index, mark] of simulation.canvas.marks.entries()) {
-      const x = centerX + mark.xMeters * paintingScale;
-      const radius = Math.max(4, mark.radiusMeters * paintingScale * 1.9);
-      const paintY =
-        paintingTop + paintingHeight / 2 + mark.zMeters * paintingScale;
-      ctx.fillStyle = mark.color;
-      ctx.globalAlpha = 0.68;
-      ctx.beginPath();
-      ctx.arc(x, paintY, radius, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.globalAlpha = 0.28;
-      ctx.beginPath();
-      ctx.arc(
-        x + Math.cos(index * 4.17) * radius * 0.9,
-        paintY + Math.sin(index * 3.31) * radius * 0.8,
-        radius * 0.42,
-        0,
-        Math.PI * 2,
-      );
-      ctx.fill();
-      ctx.globalAlpha = 1;
-    }
+    this.drawPaintMarks(
+      ctx,
+      simulation.canvas.marks,
+      centerX,
+      paintingTop + paintingHeight / 2,
+      paintingScale,
+      4,
+    );
 
     for (const drop of simulation.drops) {
       const [x, y] = toScreen(drop.position.xMeters, drop.position.yMeters);
@@ -208,5 +229,39 @@ export class Renderer {
     ctx.fillStyle = "rgba(20, 16, 36, 0.5)";
     ctx.fillRect(-11, -8, 22, 4);
     ctx.restore();
+  }
+
+  private drawPaintMarks(
+    context: CanvasRenderingContext2D,
+    marks: readonly PaintMark[],
+    centerX: number,
+    centerY: number,
+    scale: number,
+    minimumRadiusPixels: number,
+  ): void {
+    for (const [index, mark] of marks.entries()) {
+      const x = centerX + mark.xMeters * scale;
+      const y = centerY + mark.zMeters * scale;
+      const radius = Math.max(
+        minimumRadiusPixels,
+        mark.radiusMeters * scale * 1.9,
+      );
+      context.fillStyle = mark.color;
+      context.globalAlpha = 0.68;
+      context.beginPath();
+      context.arc(x, y, radius, 0, Math.PI * 2);
+      context.fill();
+      context.globalAlpha = 0.28;
+      context.beginPath();
+      context.arc(
+        x + Math.cos(index * 4.17) * radius * 0.9,
+        y + Math.sin(index * 3.31) * radius * 0.8,
+        radius * 0.42,
+        0,
+        Math.PI * 2,
+      );
+      context.fill();
+      context.globalAlpha = 1;
+    }
   }
 }
