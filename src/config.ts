@@ -1,4 +1,5 @@
 export interface SimulationConfig {
+  paintMode: "drops" | "flow";
   initialAngleDegrees: number;
   initialAzimuthDegrees: number;
   azimuthalVelocityRadiansPerSecond: number;
@@ -36,6 +37,7 @@ export interface CanvasConfig {
 }
 
 export interface PendulumConfig {
+  paintMode: "drops" | "flow";
   paintColor: string;
   lengthMeters: number;
   initialInclinationDegrees: number;
@@ -61,6 +63,7 @@ export interface ProjectConfig {
 }
 
 export const defaultConfig: SimulationConfig = {
+  paintMode: "drops",
   initialAngleDegrees: 52,
   initialAzimuthDegrees: 0,
   azimuthalVelocityRadiansPerSecond: 1.35,
@@ -98,6 +101,7 @@ export const defaultCanvasConfig: CanvasConfig = {
 };
 
 export const defaultPendulumConfig: PendulumConfig = {
+  paintMode: "drops",
   paintColor: defaultConfig.paintColor,
   lengthMeters: defaultConfig.pendulumLengthMeters,
   initialInclinationDegrees: defaultConfig.initialAngleDegrees,
@@ -130,6 +134,7 @@ export function simulationConfigForPendulum(
   const pendulum = project.pendulums[index];
   return {
     ...defaultConfig,
+    paintMode: pendulum.paintMode,
     initialAngleDegrees: pendulum.initialInclinationDegrees,
     initialAzimuthDegrees: pendulum.initialAzimuthDegrees,
     azimuthalVelocityRadiansPerSecond:
@@ -314,6 +319,7 @@ export function parseProjectConfigJson(json: string): ProjectConfig {
 
 function simulationToPendulumConfig(config: SimulationConfig): PendulumConfig {
   return {
+    paintMode: config.paintMode,
     paintColor: config.paintColor,
     lengthMeters: config.pendulumLengthMeters,
     initialInclinationDegrees: config.initialAngleDegrees,

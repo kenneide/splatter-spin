@@ -34,6 +34,7 @@ app.innerHTML = `
             <div class="field field-pair"><div><label for="length">Length (m) <output id="length-limit"></output></label><input id="length" name="lengthMeters" type="number" min="0.4" step="0.05"></div><div><label for="damping">Damping (s⁻¹)</label><input id="damping" name="dampingPerSecond" type="number" min="0" max="1" step="0.005"></div></div>
             <div class="field field-triple"><div><label for="position-x">X (m)</label><input id="position-x" name="positionXMeters" type="number" min="-10" max="10" step="0.1"></div><div><label for="position-y">Y (m)</label><input id="position-y" name="positionYMeters" type="number" min="-10" max="10" step="0.1"></div><div><label for="position-z">Z / height (m)</label><input id="position-z" name="positionZMeters" type="number" min="-1" max="10" step="0.1"></div></div>
             <div class="field field-pair"><div><label for="color">Paint</label><input id="color" name="paintColor" type="color"></div><div><label for="paint-amount">Paint (ml)</label><input id="paint-amount" name="initialPaintMilliliters" type="number" min="1" max="1000" step="5"></div></div>
+            <div class="field"><label for="paint-mode">Paint mode</label><select id="paint-mode" name="paintMode"><option value="drops">Individual drops</option><option value="flow">Continuous flow</option></select></div>
             <div class="field"><label for="hole-size">Hole diameter (mm)</label><input id="hole-size" name="holeDiameterMillimeters" type="number" min="0.1" max="6" step="0.05"></div>
             <div class="field"><label for="drop-size">Drop size <output id="drop-size-value"></output></label><input id="drop-size" name="dropletVolumeMilliliters" type="range" min="-4" max="-1" step="0.05"></div>
             <div class="field"><label for="randomness">Landing scatter <output id="randomness-value"></output></label><input id="randomness" name="randomness" type="range" min="0" max="1" step="0.01"></div>
@@ -110,6 +111,7 @@ function createProjections(config: ProjectConfig) {
 
 function populatePendulum(config: PendulumConfig): void {
   const ordinary: Array<keyof PendulumConfig> = [
+    "paintMode",
     "paintColor",
     "lengthMeters",
     "initialInclinationDegrees",
@@ -173,6 +175,7 @@ function updateOutputs(): void {
 
 function pendulumFromForm(): PendulumConfig {
   return {
+    paintMode: field("paintMode").value as PendulumConfig["paintMode"],
     paintColor: field("paintColor").value,
     lengthMeters: Number(field("lengthMeters").value),
     initialInclinationDegrees: Number(field("initialInclinationDegrees").value),

@@ -105,6 +105,19 @@ function runToCompletion(seed: number) {
 }
 
 describe("Simulation determinism", () => {
+  it("traces continuous flow without creating drops", () => {
+    const simulation = new Simulation({
+      ...defaultConfig,
+      paintMode: "flow",
+      durationSeconds: 0.2,
+    });
+    simulation.start();
+    for (let step = 0; step < 30; step += 1) simulation.step();
+    expect(simulation.drops).toHaveLength(0);
+    expect(simulation.canvas.strokes.length).toBeGreaterThan(0);
+    expect(simulation.canvas.marks).toHaveLength(0);
+  });
+
   it("samples a bounded deterministic future projection", () => {
     const config = {
       ...defaultConfig,

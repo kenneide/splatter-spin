@@ -259,8 +259,18 @@ export interface PaintMark {
   color: string;
 }
 
+export interface PaintStroke {
+  x1Meters: number;
+  z1Meters: number;
+  x2Meters: number;
+  z2Meters: number;
+  widthMeters: number;
+  color: string;
+}
+
 export class PaintCanvas {
   readonly marks: PaintMark[] = [];
+  readonly strokes: PaintStroke[] = [];
 
   constructor(
     readonly widthMeters: number,
@@ -273,6 +283,18 @@ export class PaintCanvas {
       Math.abs(mark.zMeters) <= this.depthMeters / 2
     ) {
       this.marks.push(mark);
+    }
+  }
+
+  addStroke(stroke: PaintStroke): void {
+    const endpointInside = (xMeters: number, zMeters: number) =>
+      Math.abs(xMeters) <= this.widthMeters / 2 &&
+      Math.abs(zMeters) <= this.depthMeters / 2;
+    if (
+      endpointInside(stroke.x1Meters, stroke.z1Meters) ||
+      endpointInside(stroke.x2Meters, stroke.z2Meters)
+    ) {
+      this.strokes.push(stroke);
     }
   }
 }
@@ -451,6 +473,15 @@ export class PaintSource {
     return emitted;
   }
 
+  advanceForStep(dtSeconds: number): void {
+    if (this.remainingPaintCubicMeters <= 0) return;
+    this.remainingPaintCubicMeters = Math.max(
+      0,
+      this.remainingPaintCubicMeters -
+        this.currentFlowCubicMetersPerSecond() * dtSeconds,
+    );
+  }
+
   private currentFlowCubicMetersPerSecond(): number {
     if (this.remainingPaintCubicMeters <= 0) return 0;
     const headMeters =
@@ -473,6 +504,7 @@ export class Simulation {
   readonly paintSource: PaintSource;
   readonly canvas: PaintCanvas;
   readonly drops: PaintDrop[] = [];
+  private lastFlowPoint: Point;
   elapsedSeconds = 0;
   status: SimulationStatus = "paused";
 
@@ -496,6 +528,7 @@ export class Simulation {
       config.canvasWidthMeters,
       config.canvasDepthMeters,
     );
+    this.lastFlowPoint = this.paintPoint();
   }
 
   start(): void {
@@ -517,7 +550,26 @@ export class Simulation {
 
     if (remainingEmissionSeconds > 0) {
       this.pendulum.step(dt, this.config.gravityMetersPerSecondSquared);
-      this.drops.push(...this.paintSource.emitForStep(dt, this.pendulum));
+      if (this.config.paintMode === "flow") {
+        const wasPainting = this.paintSource.remainingPaintMilliliters > 0;
+        this.paintSource.advanceForStep(dt);
+        const nextPoint = this.paintPoint();
+        if (wasPainting)
+          this.canvas.addStroke({
+            x1Meters: this.lastFlowPoint.xMeters,
+            z1Meters: this.lastFlowPoint.zMeters,
+            x2Meters: nextPoint.xMeters,
+            z2Meters: nextPoint.zMeters,
+            widthMeters: Math.max(
+              0.002,
+              (this.config.holeDiameterMillimeters / 1000) * 0.75,
+            ),
+            color: this.config.paintColor,
+          });
+        this.lastFlowPoint = nextPoint;
+      } else {
+        this.drops.push(...this.paintSource.emitForStep(dt, this.pendulum));
+      }
       this.elapsedSeconds += dt;
     }
 
@@ -547,6 +599,17 @@ export class Simulation {
       this.status = "complete";
     }
   }
+
+  private paintPoint(): Point {
+    const bob = this.pendulum.bobPosition(
+      this.config.pivotHeightMeters + this.config.pivotOffsetHeightMeters,
+    );
+    return {
+      xMeters: bob.xMeters + this.config.pivotOffsetXMeters,
+      yMeters: 0,
+      zMeters: bob.zMeters + this.config.pivotOffsetZMeters,
+    };
+  }
 }
 
 export function projectInitialPaintMarks(
@@ -567,7 +630,7 @@ export function projectInitialPaintMarks(
   ) {
     projection.step();
   }
-  return projection.canvas.marks.slice(0, count).map((mark) => ({ ...mark }));
+  return marksForProjection(projection, count);
 }
 
 export function projectFuturePaintMarks(
@@ -600,7 +663,7 @@ export function projectFuturePaintMarks(
     projection.step();
   }
 
-  const marks = projection.canvas.marks;
+  const marks = marksForProjection(projection);
   if (maximumMarks <= 0) return [];
   if (marks.length <= maximumMarks) return marks.map((mark) => ({ ...mark }));
   if (maximumMarks === 1) return [{ ...marks[0] }];
@@ -612,4 +675,19 @@ export function projectFuturePaintMarks(
     );
     return { ...marks[sourceIndex] };
   });
+}
+
+function marksForProjection(
+  projection: Simulation,
+  maximum = Infinity,
+): PaintMark[] {
+  if (projection.config.paintMode === "flow") {
+    return projection.canvas.strokes.slice(0, maximum).map((stroke) => ({
+      xMeters: stroke.x2Meters,
+      zMeters: stroke.z2Meters,
+      radiusMeters: stroke.widthMeters / 2,
+      color: stroke.color,
+    }));
+  }
+  return projection.canvas.marks.slice(0, maximum).map((mark) => ({ ...mark }));
 }

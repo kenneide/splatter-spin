@@ -1,11 +1,13 @@
 import type { CanvasConfig } from "./config";
-import type { PaintMark, Simulation } from "./model";
+import type { PaintMark, PaintStroke, Simulation } from "./model";
 
 export class Renderer {
   private readonly context: CanvasRenderingContext2D;
   private paintingCache: HTMLCanvasElement | null = null;
   private cachedMarkArrays: readonly PaintMark[][] = [];
   private cachedMarkCounts: number[] = [];
+  private cachedStrokeArrays: readonly PaintStroke[][] = [];
+  private cachedStrokeCounts: number[] = [];
   private cachedCanvasWidth = 0;
   private cachedCanvasHeight = 0;
   private cachedPaintingScale = 0;
@@ -337,6 +339,8 @@ export class Renderer {
   ): void {
     const arrays = simulations.map((item) => item.canvas.marks);
     const counts = arrays.map((marks) => marks.length);
+    const strokeArrays = simulations.map((item) => item.canvas.strokes);
+    const strokeCounts = strokeArrays.map((strokes) => strokes.length);
     const cacheMatches =
       this.paintingCache &&
       this.cachedCanvasWidth === this.cssWidth &&
@@ -345,10 +349,16 @@ export class Renderer {
       this.cachedCenterX === centerX &&
       this.cachedCenterY === centerY &&
       arrays.length === this.cachedMarkArrays.length &&
+      strokeArrays.length === this.cachedStrokeArrays.length &&
       arrays.every(
         (marks, index) =>
           marks === this.cachedMarkArrays[index] &&
           counts[index] === this.cachedMarkCounts[index],
+      ) &&
+      strokeArrays.every(
+        (strokes, index) =>
+          strokes === this.cachedStrokeArrays[index] &&
+          strokeCounts[index] === this.cachedStrokeCounts[index],
       );
     if (!cacheMatches) {
       const cache = document.createElement("canvas");
@@ -358,6 +368,14 @@ export class Renderer {
       const cacheContext = cache.getContext("2d");
       if (!cacheContext) return;
       cacheContext.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+      for (const item of simulations)
+        this.drawPaintStrokes(
+          cacheContext,
+          item.canvas.strokes,
+          centerX,
+          centerY,
+          scale,
+        );
       for (const item of simulations)
         this.drawPaintMarks(
           cacheContext,
@@ -370,6 +388,8 @@ export class Renderer {
       this.paintingCache = cache;
       this.cachedMarkArrays = arrays;
       this.cachedMarkCounts = counts;
+      this.cachedStrokeArrays = strokeArrays;
+      this.cachedStrokeCounts = strokeCounts;
       this.cachedCanvasWidth = this.cssWidth;
       this.cachedCanvasHeight = this.cssHeight;
       this.cachedPaintingScale = scale;
@@ -383,6 +403,32 @@ export class Renderer {
       this.cssWidth,
       this.cssHeight,
     );
+  }
+
+  private drawPaintStrokes(
+    context: CanvasRenderingContext2D,
+    strokes: readonly PaintStroke[],
+    centerX: number,
+    centerY: number,
+    scale: number,
+  ): void {
+    context.lineCap = "round";
+    for (const stroke of strokes) {
+      context.strokeStyle = stroke.color;
+      context.globalAlpha = 0.8;
+      context.lineWidth = Math.max(1.25, stroke.widthMeters * scale * 1.9);
+      context.beginPath();
+      context.moveTo(
+        centerX + stroke.x1Meters * scale,
+        centerY + stroke.z1Meters * scale,
+      );
+      context.lineTo(
+        centerX + stroke.x2Meters * scale,
+        centerY + stroke.z2Meters * scale,
+      );
+      context.stroke();
+    }
+    context.globalAlpha = 1;
   }
 }
 
