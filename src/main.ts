@@ -24,7 +24,7 @@ app.innerHTML = `
           <div class="field"><label for="length">Length (m)</label><input id="length" name="pendulumLengthMeters" type="number" min="0.4" max="1.5" step="0.05"></div>
           <div class="field"><label for="damping">Damping (s⁻¹)</label><input id="damping" name="dampingPerSecond" type="number" min="0" max="1" step="0.005"></div>
           <div class="field field-pair"><div><label for="color">Paint</label><input id="color" name="paintColor" type="color"></div><div><label for="seed">Seed</label><input id="seed" name="seed" type="number" step="1"></div></div>
-          <div class="field field-pair"><div><label for="paint-amount">Paint (ml)</label><input id="paint-amount" name="initialPaintMilliliters" type="number" min="1" max="1000" step="5"></div><div><label for="hole-size">Hole (mm)</label><input id="hole-size" name="holeDiameterMillimeters" type="number" min="0.5" max="12" step="0.25"></div></div>
+          <div class="field field-pair"><div><label for="paint-amount">Paint (ml)</label><input id="paint-amount" name="initialPaintMilliliters" type="number" min="1" max="1000" step="5"></div><div><label for="hole-size">Hole (mm)</label><input id="hole-size" name="holeDiameterMillimeters" type="number" min="0.1" max="6" step="0.05"></div></div>
           <div class="field"><label for="duration">Duration (s)</label><input id="duration" name="durationSeconds" type="number" min="1" max="120" step="1"></div>
           <div class="field"><label for="randomness">Randomness <output id="randomness-value"></output></label><input id="randomness" name="randomness" type="range" min="0" max="1" step="0.01"></div>
           <p id="form-error" class="error" role="alert"></p>

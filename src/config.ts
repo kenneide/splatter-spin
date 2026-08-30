@@ -30,7 +30,7 @@ export const defaultConfig: SimulationConfig = {
   dampingPerSecond: 0.075,
   paintColor: "#ff3b72",
   initialPaintMilliliters: 100,
-  holeDiameterMillimeters: 5.5,
+  holeDiameterMillimeters: 1.5,
   durationSeconds: 24,
   randomness: 0.45,
   seed: 2026,
@@ -43,7 +43,7 @@ export const defaultConfig: SimulationConfig = {
   maximumScatterMeters: 0.1,
   reservoirAreaSquareMeters: 0.005,
   dischargeCoefficient: 0.62,
-  dropletVolumeMilliliters: 0.35,
+  dropletVolumeMilliliters: 0.01,
 };
 
 export function validateConfig(config: SimulationConfig): string[] {

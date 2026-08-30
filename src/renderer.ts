@@ -128,7 +128,7 @@ export class Renderer {
       ctx.arc(
         x,
         y,
-        Math.max(2, drop.radiusMeters * physicsScale * 0.65),
+        Math.max(1, drop.radiusMeters * physicsScale * 0.28),
         0,
         Math.PI * 2,
       );
