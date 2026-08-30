@@ -368,7 +368,8 @@ export class Renderer {
       const cacheContext = cache.getContext("2d");
       if (!cacheContext) return;
       cacheContext.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
-      for (const item of simulations)
+      // Draw each pendulum as one layer: array order is the paint stack.
+      for (const item of simulations) {
         this.drawPaintStrokes(
           cacheContext,
           item.canvas.strokes,
@@ -376,7 +377,6 @@ export class Renderer {
           centerY,
           scale,
         );
-      for (const item of simulations)
         this.drawPaintMarks(
           cacheContext,
           item.canvas.marks,
@@ -385,6 +385,7 @@ export class Renderer {
           scale,
           4,
         );
+      }
       this.paintingCache = cache;
       this.cachedMarkArrays = arrays;
       this.cachedMarkCounts = counts;
