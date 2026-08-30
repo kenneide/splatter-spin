@@ -1,0 +1,60 @@
+{
+  "version": 1,
+  "seed": 2026,
+  "durationSeconds": 5,
+  "canvas": {
+    "widthMeters": 4,
+    "depthMeters": 3,
+    "color": "#121211"
+  },
+  "pendulums": [
+    {
+      "paintColor": "#ff3b72",
+      "lengthMeters": 0.67,
+      "initialInclinationDegrees": 46,
+      "initialAzimuthDegrees": 0,
+      "initialOrbitSpeedRadiansPerSecond": -1.45,
+      "dampingPerSecond": 0.06,
+      "initialPaintMilliliters": 136,
+      "holeDiameterMillimeters": 5,
+      "dropletVolumeMilliliters": 0.0707945784384138,
+      "randomness": 1,
+      "dropSizeVariation": 1,
+      "positionXMeters": 0,
+      "positionYMeters": 0,
+      "positionZMeters": 0.2
+    },
+    {
+      "paintColor": "#f6fa29",
+      "lengthMeters": 0.6,
+      "initialInclinationDegrees": 55,
+      "initialAzimuthDegrees": -149,
+      "initialOrbitSpeedRadiansPerSecond": -0.7,
+      "dampingPerSecond": 0.01,
+      "initialPaintMilliliters": 136,
+      "holeDiameterMillimeters": 0.1,
+      "dropletVolumeMilliliters": 0.00031622776601683794,
+      "randomness": 0.6,
+      "dropSizeVariation": 0.6,
+      "positionXMeters": 0,
+      "positionYMeters": 0,
+      "positionZMeters": 2.2
+    },
+    {
+      "paintColor": "#0ec9e1",
+      "lengthMeters": 0.6,
+      "initialInclinationDegrees": 73,
+      "initialAzimuthDegrees": 116,
+      "initialOrbitSpeedRadiansPerSecond": 2.45,
+      "dampingPerSecond": 0.07,
+      "initialPaintMilliliters": 136,
+      "holeDiameterMillimeters": 2.25,
+      "dropletVolumeMilliliters": 0.000630957344480193,
+      "randomness": 0.06,
+      "dropSizeVariation": 0.8,
+      "positionXMeters": -0.1,
+      "positionYMeters": 0,
+      "positionZMeters": 0.2
+    }
+  ]
+}

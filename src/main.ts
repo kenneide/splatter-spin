@@ -1,4 +1,5 @@
 import "./style.css";
+import exampleProjectJson from "../default.json";
 import {
   defaultConfig,
   defaultProjectConfig,
@@ -67,7 +68,17 @@ app.innerHTML = `
 const pendulumForm = document.querySelector<HTMLFormElement>("#pendulum-form")!;
 const canvas = document.querySelector<HTMLCanvasElement>("#stage")!;
 const renderer = new Renderer(canvas);
-let project: ProjectConfig = structuredClone(defaultProjectConfig);
+function initialProjectConfig(): ProjectConfig {
+  try {
+    // Keep the richer example in one editable, portable JSON file.
+    return parseProjectConfigJson(JSON.stringify(exampleProjectJson));
+  } catch {
+    // A bundled fallback keeps the UI usable if the example is malformed.
+    return structuredClone(defaultProjectConfig);
+  }
+}
+
+let project: ProjectConfig = initialProjectConfig();
 let selectedPendulumIndex = 0;
 let simulations = createSimulations(project);
 let projectedMarks: ReturnType<typeof createProjections> = [];
