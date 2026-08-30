@@ -74,7 +74,7 @@ function initialProjectConfig(): ProjectConfig {
     return parseProjectConfigJson(JSON.stringify(exampleProjectJson));
   } catch {
     // A bundled fallback keeps the UI usable if the example is malformed.
-    return structuredClone(defaultProjectConfig);
+    return cloneSerializable(defaultProjectConfig);
   }
 }
 
@@ -279,7 +279,7 @@ for (const selector of ["#seed", "#duration"]) {
 element("#add-pendulum").addEventListener("click", () => {
   if (!commitControls()) return;
   project.pendulums.push(
-    structuredClone(project.pendulums[selectedPendulumIndex]),
+    cloneSerializable(project.pendulums[selectedPendulumIndex]),
   );
   selectedPendulumIndex = project.pendulums.length - 1;
   populatePendulum(project.pendulums[selectedPendulumIndex]);
@@ -414,6 +414,12 @@ function downloadBlob(blob: Blob, filename: string): void {
   window.setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 
+function cloneSerializable<T>(value: T): T {
+  // JSON configuration data is plain and this also supports older Safari,
+  // which predates structuredClone.
+  return JSON.parse(JSON.stringify(value)) as T;
+}
+
 function updateStatus(): void {
   const elapsed = Math.max(...simulations.map((item) => item.elapsedSeconds));
   const drops = simulations.reduce((sum, item) => sum + item.drops.length, 0);
@@ -476,7 +482,11 @@ function frame(nowMilliseconds: number): void {
 populateProjectControls();
 populatePendulum(project.pendulums[0]);
 renderPendulumList();
-new ResizeObserver(() => renderer.resize()).observe(canvas);
+if (typeof ResizeObserver !== "undefined") {
+  new ResizeObserver(() => renderer.resize()).observe(canvas);
+} else {
+  window.addEventListener("resize", () => renderer.resize());
+}
 requestAnimationFrame(frame);
 // Let controls and the first animation frame become interactive before doing
 // forecast work; Start never waits for this projection.

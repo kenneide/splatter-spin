@@ -1,7 +1,7 @@
 {
   "version": 1,
   "seed": 2026,
-  "durationSeconds": 5,
+  "durationSeconds": 10,
   "canvas": {
     "widthMeters": 4,
     "depthMeters": 3,
@@ -10,19 +10,35 @@
   "pendulums": [
     {
       "paintColor": "#ff3b72",
-      "lengthMeters": 0.67,
-      "initialInclinationDegrees": 46,
-      "initialAzimuthDegrees": 0,
-      "initialOrbitSpeedRadiansPerSecond": -1.45,
-      "dampingPerSecond": 0.06,
+      "lengthMeters": 1.1,
+      "initialInclinationDegrees": 23,
+      "initialAzimuthDegrees": 36,
+      "initialOrbitSpeedRadiansPerSecond": -2.95,
+      "dampingPerSecond": 0.585,
       "initialPaintMilliliters": 136,
-      "holeDiameterMillimeters": 5,
-      "dropletVolumeMilliliters": 0.0707945784384138,
+      "holeDiameterMillimeters": 3,
+      "dropletVolumeMilliliters": 0.03548133892335755,
       "randomness": 1,
-      "dropSizeVariation": 1,
+      "dropSizeVariation": 0.12,
       "positionXMeters": 0,
       "positionYMeters": 0,
-      "positionZMeters": 0.2
+      "positionZMeters": 0.9
+    },
+    {
+      "paintColor": "#0ec9e1",
+      "lengthMeters": 0.6,
+      "initialInclinationDegrees": 80,
+      "initialAzimuthDegrees": 45,
+      "initialOrbitSpeedRadiansPerSecond": 0.5,
+      "dampingPerSecond": 0.07,
+      "initialPaintMilliliters": 136,
+      "holeDiameterMillimeters": 2,
+      "dropletVolumeMilliliters": 0.0001,
+      "randomness": 0.06,
+      "dropSizeVariation": 0.97,
+      "positionXMeters": -0.4,
+      "positionYMeters": 0,
+      "positionZMeters": 1.5
     },
     {
       "paintColor": "#f6fa29",
@@ -39,22 +55,6 @@
       "positionXMeters": 0,
       "positionYMeters": 0,
       "positionZMeters": 2.2
-    },
-    {
-      "paintColor": "#0ec9e1",
-      "lengthMeters": 0.6,
-      "initialInclinationDegrees": 73,
-      "initialAzimuthDegrees": 116,
-      "initialOrbitSpeedRadiansPerSecond": 2.45,
-      "dampingPerSecond": 0.07,
-      "initialPaintMilliliters": 136,
-      "holeDiameterMillimeters": 2.25,
-      "dropletVolumeMilliliters": 0.000630957344480193,
-      "randomness": 0.06,
-      "dropSizeVariation": 0.8,
-      "positionXMeters": -0.1,
-      "positionYMeters": 0,
-      "positionZMeters": 0.2
     }
   ]
 }

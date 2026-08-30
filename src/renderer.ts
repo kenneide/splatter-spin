@@ -141,7 +141,14 @@ export class Renderer {
     // The full physical canvas is fitted below at its true width/depth ratio.
     ctx.fillStyle = canvasConfig.color;
     ctx.beginPath();
-    ctx.roundRect(paintingLeft, paintingTop, paintingWidth, paintingHeight, 8);
+    roundedRectPath(
+      ctx,
+      paintingLeft,
+      paintingTop,
+      paintingWidth,
+      paintingHeight,
+      8,
+    );
     ctx.fill();
     ctx.strokeStyle = "rgba(255,255,255,0.5)";
     ctx.lineWidth = 1;
@@ -260,7 +267,7 @@ export class Renderer {
       ctx.rotate(-item.pendulum.angleRadians);
       ctx.fillStyle = item.config.paintColor;
       ctx.beginPath();
-      ctx.roundRect(-14, -11, 28, 23, 7);
+      roundedRectPath(ctx, -14, -11, 28, 23, 7);
       ctx.fill();
       ctx.fillStyle = "rgba(20, 16, 36, 0.5)";
       ctx.fillRect(-9, -7, 18, 3);
@@ -367,4 +374,30 @@ function pseudoRandom(value: number): number {
   state ^= state >>> 17;
   state ^= state << 5;
   return (state >>> 0) / 4_294_967_296;
+}
+
+function roundedRectPath(
+  context: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  radius: number,
+): void {
+  // roundRect is unavailable in older Safari releases; use equivalent arcs.
+  if (typeof context.roundRect === "function") {
+    context.roundRect(x, y, width, height, radius);
+    return;
+  }
+  const corner = Math.min(radius, Math.abs(width) / 2, Math.abs(height) / 2);
+  context.moveTo(x + corner, y);
+  context.lineTo(x + width - corner, y);
+  context.arcTo(x + width, y, x + width, y + corner, corner);
+  context.lineTo(x + width, y + height - corner);
+  context.arcTo(x + width, y + height, x + width - corner, y + height, corner);
+  context.lineTo(x + corner, y + height);
+  context.arcTo(x, y + height, x, y + height - corner, corner);
+  context.lineTo(x, y + corner);
+  context.arcTo(x, y, x + corner, y, corner);
+  context.closePath();
 }

@@ -477,7 +477,9 @@ export class Simulation {
   status: SimulationStatus = "paused";
 
   constructor(config: SimulationConfig) {
-    this.config = structuredClone(config);
+    // SimulationConfig is plain serializable data; shallow copy avoids relying
+    // on structuredClone in older Safari releases.
+    this.config = { ...config };
     this.pendulum = new Pendulum(
       config.pendulumLengthMeters,
       config.dampingPerSecond,
