@@ -1,6 +1,6 @@
 import "./style.css";
 import { defaultConfig, validateConfig, type SimulationConfig } from "./config";
-import { Simulation } from "./model";
+import { projectInitialPaintMarks, Simulation } from "./model";
 import { Renderer } from "./renderer";
 
 const app = document.querySelector<HTMLDivElement>("#app");
@@ -42,8 +42,10 @@ const form = document.querySelector<HTMLFormElement>("#controls")!;
 const canvas = document.querySelector<HTMLCanvasElement>("#stage")!;
 const renderer = new Renderer(canvas);
 let simulation = new Simulation(defaultConfig);
+let projectedMarks = projectInitialPaintMarks(defaultConfig);
 let accumulatorSeconds = 0;
 let previousFrameMilliseconds = performance.now();
+let projectionUpdateTimer: number | undefined;
 
 const input = (name: keyof SimulationConfig) =>
   form.elements.namedItem(name) as HTMLInputElement;
@@ -101,12 +103,20 @@ function configFromForm(): SimulationConfig | null {
 
 function replaceSimulation(config: SimulationConfig, start: boolean): void {
   simulation = new Simulation(config);
+  projectedMarks = projectInitialPaintMarks(config);
   accumulatorSeconds = 0;
   previousFrameMilliseconds = performance.now();
   if (start) simulation.start();
 }
 
-form.addEventListener("input", updateOutputs);
+form.addEventListener("input", () => {
+  updateOutputs();
+  window.clearTimeout(projectionUpdateTimer);
+  projectionUpdateTimer = window.setTimeout(() => {
+    const previewConfig = configFromForm();
+    if (previewConfig) projectedMarks = projectInitialPaintMarks(previewConfig);
+  }, 120);
+});
 form.addEventListener("submit", (event) => {
   event.preventDefault();
   const config = configFromForm();
@@ -159,7 +169,7 @@ function frame(nowMilliseconds: number): void {
     }
   }
   previousFrameMilliseconds = nowMilliseconds;
-  renderer.render(simulation);
+  renderer.render(simulation, projectedMarks);
   updateStatus();
   requestAnimationFrame(frame);
 }

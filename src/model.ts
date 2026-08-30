@@ -529,3 +529,24 @@ export class Simulation {
     }
   }
 }
+
+export function projectInitialPaintMarks(
+  config: SimulationConfig,
+  count = 24,
+): PaintMark[] {
+  const projection = new Simulation(config);
+  projection.start();
+  const maximumSteps = Math.ceil(
+    (config.durationSeconds + 5) / config.fixedTimeStepSeconds,
+  );
+  for (
+    let step = 0;
+    step < maximumSteps &&
+    projection.status !== "complete" &&
+    projection.canvas.marks.length < count;
+    step += 1
+  ) {
+    projection.step();
+  }
+  return projection.canvas.marks.slice(0, count).map((mark) => ({ ...mark }));
+}

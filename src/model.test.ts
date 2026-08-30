@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { defaultConfig } from "./config";
-import { PaintDrop, Pendulum, Simulation } from "./model";
+import {
+  PaintDrop,
+  Pendulum,
+  projectInitialPaintMarks,
+  Simulation,
+} from "./model";
 
 describe("Pendulum", () => {
   it("evolves from known initial conditions", () => {
@@ -92,6 +97,15 @@ function runToCompletion(seed: number) {
 }
 
 describe("Simulation determinism", () => {
+  it("projects the same first marks produced by the real run", () => {
+    const config = { ...defaultConfig, durationSeconds: 3, seed: 91 };
+    const projected = projectInitialPaintMarks(config, 12);
+    const simulation = new Simulation(config);
+    simulation.start();
+    while (simulation.status !== "complete") simulation.step();
+    expect(projected).toEqual(simulation.canvas.marks.slice(0, 12));
+  });
+
   it("produces identical marks with the same seed", () => {
     expect(runToCompletion(42)).toEqual(runToCompletion(42));
   });

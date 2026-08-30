@@ -1,4 +1,4 @@
-import type { Simulation } from "./model";
+import type { PaintMark, Simulation } from "./model";
 
 export class Renderer {
   private readonly context: CanvasRenderingContext2D;
@@ -25,7 +25,10 @@ export class Renderer {
     this.context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
   }
 
-  render(simulation: Simulation): void {
+  render(
+    simulation: Simulation,
+    projectedMarks: readonly PaintMark[] = [],
+  ): void {
     const ctx = this.context;
     const { config } = simulation;
     const margin = 34;
@@ -97,6 +100,36 @@ export class Renderer {
       paintingLeft + 12,
       paintingTop + 17,
     );
+
+    if (
+      simulation.elapsedSeconds === 0 &&
+      simulation.canvas.marks.length === 0
+    ) {
+      ctx.save();
+      ctx.globalAlpha = 0.3;
+      ctx.lineWidth = 1.25;
+      ctx.setLineDash([3, 3]);
+      for (const mark of projectedMarks) {
+        ctx.strokeStyle = mark.color;
+        const x = centerX + mark.xMeters * paintingScale;
+        const y =
+          paintingTop + paintingHeight / 2 + mark.zMeters * paintingScale;
+        const radius = Math.max(3, mark.radiusMeters * paintingScale * 1.15);
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      ctx.fillStyle = "rgba(36, 30, 47, 0.42)";
+      ctx.font = "500 9px Inter, sans-serif";
+      ctx.letterSpacing = "0.04em";
+      ctx.fillText(
+        `FIRST ${projectedMarks.length} IMPACTS · PROJECTED`,
+        paintingLeft + 12,
+        paintingTop + paintingHeight - 12,
+      );
+    }
 
     for (const [index, mark] of simulation.canvas.marks.entries()) {
       const x = centerX + mark.xMeters * paintingScale;
