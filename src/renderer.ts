@@ -205,15 +205,22 @@ export class Renderer {
           drop.position.zMeters,
         );
         ctx.fillStyle = drop.color;
+        ctx.globalAlpha = 0.9;
         ctx.beginPath();
-        ctx.arc(
+        drawBlob(
+          ctx,
           x,
           y,
           Math.max(1, drop.radiusMeters * physicsScale * 0.28),
-          0,
-          Math.PI * 2,
+          hashValues(
+            drop.position.xMeters,
+            drop.position.yMeters,
+            drop.position.zMeters,
+          ),
+          7,
         );
         ctx.fill();
+        ctx.globalAlpha = 1;
       }
 
     for (const item of simulations) {
@@ -286,19 +293,78 @@ export class Renderer {
       context.fillStyle = mark.color;
       context.globalAlpha = 0.68;
       context.beginPath();
-      context.arc(x, y, radius, 0, Math.PI * 2);
+      drawBlob(
+        context,
+        x,
+        y,
+        radius,
+        hashValues(index, mark.xMeters, mark.zMeters, mark.radiusMeters),
+        9,
+      );
       context.fill();
       context.globalAlpha = 0.28;
       context.beginPath();
-      context.arc(
+      drawBlob(
+        context,
         x + Math.cos(index * 4.17) * radius * 0.9,
         y + Math.sin(index * 3.31) * radius * 0.8,
         radius * 0.42,
-        0,
-        Math.PI * 2,
+        hashValues(index, mark.zMeters, mark.xMeters),
+        7,
       );
       context.fill();
       context.globalAlpha = 1;
     }
   }
+}
+
+/** Draw a smoothly connected, deterministic irregular blob around a center. */
+function drawBlob(
+  context: CanvasRenderingContext2D,
+  centerX: number,
+  centerY: number,
+  radius: number,
+  seed: number,
+  vertexCount: number,
+): void {
+  const points = Array.from({ length: vertexCount }, (_, index) => {
+    const angle = (index / vertexCount) * Math.PI * 2;
+    const variation = 0.78 + pseudoRandom(seed + index * 2654435761) * 0.4;
+    return {
+      x: centerX + Math.cos(angle) * radius * variation,
+      y: centerY + Math.sin(angle) * radius * variation,
+    };
+  });
+  const midpoint = (
+    first: { x: number; y: number },
+    second: { x: number; y: number },
+  ) => ({
+    x: (first.x + second.x) / 2,
+    y: (first.y + second.y) / 2,
+  });
+  const start = midpoint(points[vertexCount - 1], points[0]);
+  context.moveTo(start.x, start.y);
+  for (let index = 0; index < vertexCount; index += 1) {
+    const next = points[(index + 1) % vertexCount];
+    const end = midpoint(points[index], next);
+    context.quadraticCurveTo(points[index].x, points[index].y, end.x, end.y);
+  }
+  context.closePath();
+}
+
+function hashValues(...values: number[]): number {
+  let hash = 2166136261;
+  for (const value of values) {
+    hash ^= Math.round(value * 100_000);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
+}
+
+function pseudoRandom(value: number): number {
+  let state = value >>> 0;
+  state ^= state << 13;
+  state ^= state >>> 17;
+  state ^= state << 5;
+  return (state >>> 0) / 4_294_967_296;
 }
