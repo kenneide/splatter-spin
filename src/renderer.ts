@@ -96,13 +96,12 @@ export class Renderer {
       paintingTop + 24,
     );
 
+    const paintingScaleZ = (paintingHeight * 0.72) / config.canvasDepthMeters;
     for (const [index, mark] of simulation.canvas.marks.entries()) {
       const [x] = toScreen(mark.xMeters, 0);
       const radius = Math.max(4, mark.radiusMeters * scale * 1.9);
       const paintY =
-        paintingTop +
-        paintingHeight * 0.57 +
-        Math.sin(index * 2.399 + mark.xMeters * 5.7) * paintingHeight * 0.2;
+        paintingTop + paintingHeight * 0.57 + mark.zMeters * paintingScaleZ;
       ctx.fillStyle = mark.color;
       ctx.globalAlpha = 0.68;
       ctx.beginPath();

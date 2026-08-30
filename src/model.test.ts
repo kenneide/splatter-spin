@@ -44,10 +44,15 @@ describe("Pendulum", () => {
 describe("PaintDrop", () => {
   it("calculates its canvas intersection analytically", () => {
     const drop = new PaintDrop(
-      { xMeters: 0.25, yMeters: 1 },
-      { xMetersPerSecond: 2, yMetersPerSecond: 0 },
+      { xMeters: 0.25, yMeters: 1, zMeters: -0.1 },
+      {
+        xMetersPerSecond: 2,
+        yMetersPerSecond: 0,
+        zMetersPerSecond: 1,
+      },
       0.04,
       "#ff0000",
+      0,
       0,
     );
     const expectedTime = Math.sqrt(2 / 9.81);
@@ -55,6 +60,7 @@ describe("PaintDrop", () => {
 
     expect(impact?.timeSeconds).toBeCloseTo(expectedTime, 12);
     expect(impact?.xMeters).toBeCloseTo(0.25 + 2 * expectedTime, 12);
+    expect(impact?.zMeters).toBeCloseTo(-0.1 + expectedTime, 12);
     expect(drop.impactWithin(0.1, 9.81)).toBeNull();
   });
 });
@@ -78,6 +84,14 @@ describe("Simulation determinism", () => {
 
   it("produces different randomized marks with different seeds", () => {
     expect(runToCompletion(42)).not.toEqual(runToCompletion(43));
+  });
+
+  it("produces impacts across both canvas dimensions", () => {
+    const marks = runToCompletion(42);
+    const zCoordinates = marks.map((mark) => mark.zMeters);
+    expect(
+      Math.max(...zCoordinates) - Math.min(...zCoordinates),
+    ).toBeGreaterThan(0.2);
   });
 
   it("stops exactly at its configured duration", () => {
