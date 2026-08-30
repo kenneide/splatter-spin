@@ -30,6 +30,7 @@ app.innerHTML = `
           <div class="field"><label for="damping">Damping (s⁻¹)</label><input id="damping" name="dampingPerSecond" type="number" min="0" max="1" step="0.005"></div>
           <div class="field field-pair"><div><label for="color">Paint</label><input id="color" name="paintColor" type="color"></div><div><label for="seed">Seed</label><input id="seed" name="seed" type="number" step="1"></div></div>
           <div class="field field-pair"><div><label for="paint-amount">Paint (ml)</label><input id="paint-amount" name="initialPaintMilliliters" type="number" min="1" max="1000" step="5"></div><div><label for="hole-size">Hole (mm)</label><input id="hole-size" name="holeDiameterMillimeters" type="number" min="0.1" max="6" step="0.05"></div></div>
+          <div class="field"><label for="drop-size">Drop size <output id="drop-size-value"></output></label><input id="drop-size" name="dropletVolumeMilliliters" type="range" min="-4" max="-1" step="0.05"></div>
           <div class="field"><label for="duration">Duration (s)</label><input id="duration" name="durationSeconds" type="number" min="1" max="120" step="1"></div>
           <div class="field"><label for="randomness">Randomness <output id="randomness-value"></output></label><input id="randomness" name="randomness" type="range" min="0" max="1" step="0.01"></div>
           <p id="form-error" class="error" role="alert"></p>
@@ -72,6 +73,9 @@ function populateForm(config: SimulationConfig): void {
     "seed",
   ];
   for (const key of editable) input(key).value = String(config[key]);
+  input("dropletVolumeMilliliters").value = String(
+    Math.log10(config.dropletVolumeMilliliters),
+  );
   updateOutputs();
 }
 
@@ -84,6 +88,8 @@ function updateOutputs(): void {
     `${Math.round(Number(input("randomness").value) * 100)}%`;
   document.querySelector("#orbit-value")!.textContent =
     `${Number(input("azimuthalVelocityRadiansPerSecond").value).toFixed(2)} rad/s`;
+  document.querySelector("#drop-size-value")!.textContent =
+    `${(10 ** Number(input("dropletVolumeMilliliters").value) * 1000).toPrecision(2)} µl`;
 }
 
 function configFromForm(): SimulationConfig | null {
@@ -99,6 +105,8 @@ function configFromForm(): SimulationConfig | null {
     paintColor: input("paintColor").value,
     initialPaintMilliliters: Number(input("initialPaintMilliliters").value),
     holeDiameterMillimeters: Number(input("holeDiameterMillimeters").value),
+    dropletVolumeMilliliters:
+      10 ** Number(input("dropletVolumeMilliliters").value),
     durationSeconds: Number(input("durationSeconds").value),
     randomness: Number(input("randomness").value),
     seed: Number(input("seed").value),

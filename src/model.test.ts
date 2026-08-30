@@ -201,6 +201,42 @@ describe("Paint reservoir", () => {
       10,
     );
   });
+
+  it("scales drop radius with the cube root of selected volume", () => {
+    const small = projectInitialPaintMarks(
+      {
+        ...defaultConfig,
+        randomness: 0,
+        dropletVolumeMilliliters: 0.008,
+      },
+      1,
+    );
+    const large = projectInitialPaintMarks(
+      {
+        ...defaultConfig,
+        randomness: 0,
+        dropletVolumeMilliliters: 0.064,
+      },
+      1,
+    );
+    expect(large[0].radiusMeters).toBeCloseTo(small[0].radiusMeters * 2, 10);
+  });
+
+  it("bounds rendered particles for dense microdroplet flow", () => {
+    const simulation = new Simulation({
+      ...defaultConfig,
+      holeDiameterMillimeters: 6,
+      dropletVolumeMilliliters: 0.0001,
+    });
+    simulation.start();
+    simulation.step();
+    expect(simulation.drops).toHaveLength(
+      defaultConfig.maximumRenderedDropsPerStep,
+    );
+    expect(simulation.paintSource.remainingPaintMilliliters).toBeLessThan(
+      defaultConfig.initialPaintMilliliters - 0.05,
+    );
+  });
 });
 
 describe("configuration JSON", () => {

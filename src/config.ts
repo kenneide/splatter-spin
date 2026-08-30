@@ -20,6 +20,8 @@ export interface SimulationConfig {
   reservoirAreaSquareMeters: number;
   dischargeCoefficient: number;
   dropletVolumeMilliliters: number;
+  referenceDropletVolumeMilliliters: number;
+  maximumRenderedDropsPerStep: number;
 }
 
 export const defaultConfig: SimulationConfig = {
@@ -44,6 +46,8 @@ export const defaultConfig: SimulationConfig = {
   reservoirAreaSquareMeters: 0.005,
   dischargeCoefficient: 0.62,
   dropletVolumeMilliliters: 0.01,
+  referenceDropletVolumeMilliliters: 0.01,
+  maximumRenderedDropsPerStep: 24,
 };
 
 export function validateConfig(config: SimulationConfig): string[] {
@@ -62,6 +66,8 @@ export function validateConfig(config: SimulationConfig): string[] {
     [config.reservoirAreaSquareMeters, "Reservoir area"],
     [config.dischargeCoefficient, "Discharge coefficient"],
     [config.dropletVolumeMilliliters, "Droplet volume"],
+    [config.referenceDropletVolumeMilliliters, "Reference droplet volume"],
+    [config.maximumRenderedDropsPerStep, "Rendered-drop limit"],
   ];
 
   for (const [value, label] of finitePositive) {
@@ -88,6 +94,8 @@ export function validateConfig(config: SimulationConfig): string[] {
     errors.push("Randomness must be between 0 and 1.");
   }
   if (!Number.isInteger(config.seed)) errors.push("Seed must be an integer.");
+  if (!Number.isInteger(config.maximumRenderedDropsPerStep))
+    errors.push("Rendered-drop limit must be an integer.");
   if (!/^#[0-9a-f]{6}$/i.test(config.paintColor))
     errors.push("Paint color must be a hex color.");
   if (config.pivotHeightMeters <= config.pendulumLengthMeters) {

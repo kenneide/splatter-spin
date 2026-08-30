@@ -393,18 +393,31 @@ export class PaintSource {
     this.accumulatedPaintCubicMeters += emittedVolume;
     const dropletVolume = this.config.dropletVolumeMilliliters * 1e-6;
 
-    while (
-      this.accumulatedPaintCubicMeters >= dropletVolume ||
-      (this.remainingPaintCubicMeters === 0 &&
-        this.accumulatedPaintCubicMeters > 0)
-    ) {
-      const releasedVolume = Math.min(
-        dropletVolume,
-        this.accumulatedPaintCubicMeters,
-      );
-      this.accumulatedPaintCubicMeters -= releasedVolume;
+    const completeDropletCount = Math.floor(
+      this.accumulatedPaintCubicMeters / dropletVolume,
+    );
+    const partialVolume =
+      this.accumulatedPaintCubicMeters - completeDropletCount * dropletVolume;
+    const hasFinalPartialDrop =
+      this.remainingPaintCubicMeters === 0 && partialVolume > 0;
+    const renderedDropCount = Math.min(
+      completeDropletCount + (hasFinalPartialDrop ? 1 : 0),
+      this.config.maximumRenderedDropsPerStep,
+    );
+    this.accumulatedPaintCubicMeters = hasFinalPartialDrop ? 0 : partialVolume;
+
+    for (let dropIndex = 0; dropIndex < renderedDropCount; dropIndex += 1) {
+      const representsPartialDrop =
+        hasFinalPartialDrop &&
+        completeDropletCount < this.config.maximumRenderedDropsPerStep &&
+        dropIndex === renderedDropCount - 1;
+      const releasedVolume = representsPartialDrop
+        ? partialVolume
+        : dropletVolume;
+      const referenceDropletVolume =
+        this.config.referenceDropletVolumeMilliliters * 1e-6;
       const sizeFactor =
-        Math.cbrt(releasedVolume / dropletVolume) *
+        Math.cbrt(releasedVolume / referenceDropletVolume) *
         (1 + this.random.signed() * 0.35 * this.config.randomness);
       const scatterX =
         this.random.signed() *
