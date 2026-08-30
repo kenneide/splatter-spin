@@ -213,6 +213,10 @@ function renderPendulumList(): void {
       (pendulum, index) => `
         <div class="pendulum-item ${index === selectedPendulumIndex ? "selected" : ""}" data-index="${index}">
           <button type="button" class="select-pendulum" data-index="${index}"><i style="background:${pendulum.paintColor}"></i><span>Pendulum ${index + 1}</span><small>${pendulum.positionXMeters.toFixed(1)}, ${pendulum.positionYMeters.toFixed(1)}, ${pendulum.positionZMeters.toFixed(1)}</small></button>
+          <div class="reorder-pendulum" aria-label="Reorder pendulum ${index + 1}">
+            <button type="button" class="move-pendulum" data-action="up" data-index="${index}" aria-label="Move pendulum ${index + 1} up" ${index === 0 ? "disabled" : ""}>↑</button>
+            <button type="button" class="move-pendulum" data-action="down" data-index="${index}" aria-label="Move pendulum ${index + 1} down" ${index === project.pendulums.length - 1 ? "disabled" : ""}>↓</button>
+          </div>
           <button type="button" class="remove-pendulum" data-index="${index}" aria-label="Remove pendulum ${index + 1}">×</button>
         </div>`,
     )
@@ -275,11 +279,27 @@ element("#pendulum-list").addEventListener("click", (event) => {
   const target = event.target as HTMLElement;
   const select = target.closest<HTMLButtonElement>(".select-pendulum");
   const remove = target.closest<HTMLButtonElement>(".remove-pendulum");
+  const move = target.closest<HTMLButtonElement>(".move-pendulum");
   if (select) {
     if (!commitControls()) return;
     selectedPendulumIndex = Number(select.dataset.index);
     populatePendulum(project.pendulums[selectedPendulumIndex]);
     renderPendulumList();
+  } else if (move) {
+    if (!commitControls()) return;
+    const index = Number(move.dataset.index);
+    const direction = move.dataset.action === "up" ? -1 : 1;
+    const destination = index + direction;
+    if (destination < 0 || destination >= project.pendulums.length) return;
+    [project.pendulums[index], project.pendulums[destination]] = [
+      project.pendulums[destination],
+      project.pendulums[index],
+    ];
+    if (selectedPendulumIndex === index) selectedPendulumIndex = destination;
+    else if (selectedPendulumIndex === destination)
+      selectedPendulumIndex = index;
+    populatePendulum(project.pendulums[selectedPendulumIndex]);
+    preparePausedInitialState();
   } else if (remove) {
     if (project.pendulums.length === 1) {
       element("#form-error").textContent =
@@ -413,7 +433,7 @@ function updateStatus(): void {
   for (const control of Array.from(pendulumForm.elements))
     (control as HTMLInputElement | HTMLButtonElement).disabled = running;
   for (const button of document.querySelectorAll<HTMLButtonElement>(
-    ".select-pendulum, .remove-pendulum",
+    ".select-pendulum, .move-pendulum, .remove-pendulum",
   ))
     button.disabled = running;
 }
