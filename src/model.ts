@@ -14,10 +14,8 @@ export interface Velocity {
 }
 
 export class Pendulum {
-  angleRadians: number;
-  angularVelocityRadiansPerSecond: number;
-  azimuthRadians: number;
-  azimuthalVelocityRadiansPerSecond: number;
+  private armDirection: Vector3;
+  private directionVelocityPerSecond: Vector3;
 
   constructor(
     readonly lengthMeters: number,
@@ -27,66 +25,231 @@ export class Pendulum {
     initialAzimuthRadians = 0,
     initialAzimuthalVelocityRadiansPerSecond = 0,
   ) {
-    this.angleRadians = initialAngleRadians;
-    this.angularVelocityRadiansPerSecond =
-      initialAngularVelocityRadiansPerSecond;
-    this.azimuthRadians = initialAzimuthRadians;
-    this.azimuthalVelocityRadiansPerSecond =
-      initialAzimuthalVelocityRadiansPerSecond;
+    const sine = Math.sin(initialAngleRadians);
+    const cosine = Math.cos(initialAngleRadians);
+    const sinAzimuth = Math.sin(initialAzimuthRadians);
+    const cosAzimuth = Math.cos(initialAzimuthRadians);
+    this.armDirection = {
+      x: sine * cosAzimuth,
+      y: cosine,
+      z: sine * sinAzimuth,
+    };
+    this.directionVelocityPerSecond = {
+      x:
+        cosine * initialAngularVelocityRadiansPerSecond * cosAzimuth -
+        sine * sinAzimuth * initialAzimuthalVelocityRadiansPerSecond,
+      y: -sine * initialAngularVelocityRadiansPerSecond,
+      z:
+        cosine * initialAngularVelocityRadiansPerSecond * sinAzimuth +
+        sine * cosAzimuth * initialAzimuthalVelocityRadiansPerSecond,
+    };
   }
 
   step(dtSeconds: number, gravityMetersPerSecondSquared: number): void {
-    // Spherical pendulum equations in inclination θ and azimuth φ.
-    // The sine floor avoids the coordinate singularity at θ = 0.
-    const sine = Math.sin(this.angleRadians);
-    const safeSine = Math.max(Math.abs(sine), 1e-6);
-    const azimuthalAcceleration =
-      -2 *
-        (Math.cos(this.angleRadians) / safeSine) *
-        this.angularVelocityRadiansPerSecond *
-        this.azimuthalVelocityRadiansPerSecond -
-      this.dampingPerSecond * this.azimuthalVelocityRadiansPerSecond;
-    const angularAcceleration =
-      sine *
-        Math.cos(this.angleRadians) *
-        this.azimuthalVelocityRadiansPerSecond ** 2 -
-      (gravityMetersPerSecondSquared / this.lengthMeters) * sine -
-      this.dampingPerSecond * this.angularVelocityRadiansPerSecond;
+    const gravityScale = gravityMetersPerSecondSquared / this.lengthMeters;
+    const acceleration = (direction: Vector3, velocity: Vector3): Vector3 =>
+      constrainedAcceleration(
+        direction,
+        velocity,
+        gravityScale,
+        this.dampingPerSecond,
+      );
 
-    this.angularVelocityRadiansPerSecond += angularAcceleration * dtSeconds;
-    this.azimuthalVelocityRadiansPerSecond += azimuthalAcceleration * dtSeconds;
-    this.angleRadians += this.angularVelocityRadiansPerSecond * dtSeconds;
-    this.azimuthRadians += this.azimuthalVelocityRadiansPerSecond * dtSeconds;
+    // Fixed-step RK4 limits long-run energy drift while remaining deterministic.
+    const k1Direction = this.directionVelocityPerSecond;
+    const k1Velocity = acceleration(
+      this.armDirection,
+      this.directionVelocityPerSecond,
+    );
+    const k2Direction = addScaled(
+      this.directionVelocityPerSecond,
+      k1Velocity,
+      dtSeconds / 2,
+    );
+    const k2Velocity = acceleration(
+      addScaled(this.armDirection, k1Direction, dtSeconds / 2),
+      k2Direction,
+    );
+    const k3Direction = addScaled(
+      this.directionVelocityPerSecond,
+      k2Velocity,
+      dtSeconds / 2,
+    );
+    const k3Velocity = acceleration(
+      addScaled(this.armDirection, k2Direction, dtSeconds / 2),
+      k3Direction,
+    );
+    const k4Direction = addScaled(
+      this.directionVelocityPerSecond,
+      k3Velocity,
+      dtSeconds,
+    );
+    const k4Velocity = acceleration(
+      addScaled(this.armDirection, k3Direction, dtSeconds),
+      k4Direction,
+    );
+
+    this.armDirection = normalize(
+      addRungeKutta(
+        this.armDirection,
+        k1Direction,
+        k2Direction,
+        k3Direction,
+        k4Direction,
+        dtSeconds,
+      ),
+    );
+    const nextVelocity = addRungeKutta(
+      this.directionVelocityPerSecond,
+      k1Velocity,
+      k2Velocity,
+      k3Velocity,
+      k4Velocity,
+      dtSeconds,
+    );
+    // Projection removes radial drift introduced by numerical integration.
+    this.directionVelocityPerSecond = subtractScaled(
+      nextVelocity,
+      this.armDirection,
+      dot(nextVelocity, this.armDirection),
+    );
+  }
+
+  get angleRadians(): number {
+    return Math.acos(Math.max(-1, Math.min(1, this.armDirection.y)));
+  }
+
+  get azimuthRadians(): number {
+    return Math.atan2(this.armDirection.z, this.armDirection.x);
+  }
+
+  get angularVelocityRadiansPerSecond(): number {
+    const azimuth = this.azimuthRadians;
+    const inclinationDirection: Vector3 = {
+      x: Math.cos(this.angleRadians) * Math.cos(azimuth),
+      y: -Math.sin(this.angleRadians),
+      z: Math.cos(this.angleRadians) * Math.sin(azimuth),
+    };
+    return dot(this.directionVelocityPerSecond, inclinationDirection);
+  }
+
+  get azimuthalVelocityRadiansPerSecond(): number {
+    const sine = Math.sin(this.angleRadians);
+    if (Math.abs(sine) < 1e-8) return 0;
+    const azimuth = this.azimuthRadians;
+    return (
+      (-Math.sin(azimuth) * this.directionVelocityPerSecond.x +
+        Math.cos(azimuth) * this.directionVelocityPerSecond.z) /
+      sine
+    );
+  }
+
+  specificMechanicalEnergy(gravityMetersPerSecondSquared: number): number {
+    return (
+      0.5 *
+        this.lengthMeters ** 2 *
+        dot(this.directionVelocityPerSecond, this.directionVelocityPerSecond) +
+      gravityMetersPerSecondSquared *
+        this.lengthMeters *
+        (1 - this.armDirection.y)
+    );
   }
 
   bobPosition(pivotHeightMeters: number): Point {
-    const radialDistance = this.lengthMeters * Math.sin(this.angleRadians);
     return {
-      xMeters: radialDistance * Math.cos(this.azimuthRadians),
-      yMeters:
-        pivotHeightMeters - this.lengthMeters * Math.cos(this.angleRadians),
-      zMeters: radialDistance * Math.sin(this.azimuthRadians),
+      xMeters: this.lengthMeters * this.armDirection.x,
+      yMeters: pivotHeightMeters - this.lengthMeters * this.armDirection.y,
+      zMeters: this.lengthMeters * this.armDirection.z,
     };
   }
 
   bobVelocity(): Velocity {
-    const sine = Math.sin(this.angleRadians);
-    const cosine = Math.cos(this.angleRadians);
-    const sinAzimuth = Math.sin(this.azimuthRadians);
-    const cosAzimuth = Math.cos(this.azimuthRadians);
     return {
-      xMetersPerSecond:
-        this.lengthMeters *
-        (cosine * this.angularVelocityRadiansPerSecond * cosAzimuth -
-          sine * sinAzimuth * this.azimuthalVelocityRadiansPerSecond),
-      yMetersPerSecond:
-        this.lengthMeters * sine * this.angularVelocityRadiansPerSecond,
-      zMetersPerSecond:
-        this.lengthMeters *
-        (cosine * this.angularVelocityRadiansPerSecond * sinAzimuth +
-          sine * cosAzimuth * this.azimuthalVelocityRadiansPerSecond),
+      xMetersPerSecond: this.lengthMeters * this.directionVelocityPerSecond.x,
+      yMetersPerSecond: -this.lengthMeters * this.directionVelocityPerSecond.y,
+      zMetersPerSecond: this.lengthMeters * this.directionVelocityPerSecond.z,
     };
   }
+}
+
+interface Vector3 {
+  x: number;
+  y: number;
+  z: number;
+}
+
+function dot(left: Vector3, right: Vector3): number {
+  return left.x * right.x + left.y * right.y + left.z * right.z;
+}
+
+function addScaled(vector: Vector3, delta: Vector3, scale: number): Vector3 {
+  return {
+    x: vector.x + delta.x * scale,
+    y: vector.y + delta.y * scale,
+    z: vector.z + delta.z * scale,
+  };
+}
+
+function addRungeKutta(
+  value: Vector3,
+  k1: Vector3,
+  k2: Vector3,
+  k3: Vector3,
+  k4: Vector3,
+  dtSeconds: number,
+): Vector3 {
+  const scale = dtSeconds / 6;
+  return {
+    x: value.x + scale * (k1.x + 2 * k2.x + 2 * k3.x + k4.x),
+    y: value.y + scale * (k1.y + 2 * k2.y + 2 * k3.y + k4.y),
+    z: value.z + scale * (k1.z + 2 * k2.z + 2 * k3.z + k4.z),
+  };
+}
+
+function constrainedAcceleration(
+  direction: Vector3,
+  velocity: Vector3,
+  gravityScale: number,
+  dampingPerSecond: number,
+): Vector3 {
+  const speedSquared = dot(velocity, velocity);
+  // Tangential gravity drives the swing; -|q'|²q supplies centripetal
+  // acceleration for unit direction q. This form has no pole singularity.
+  return {
+    x:
+      -gravityScale * direction.y * direction.x -
+      dampingPerSecond * velocity.x -
+      speedSquared * direction.x,
+    y:
+      gravityScale * (1 - direction.y * direction.y) -
+      dampingPerSecond * velocity.y -
+      speedSquared * direction.y,
+    z:
+      -gravityScale * direction.y * direction.z -
+      dampingPerSecond * velocity.z -
+      speedSquared * direction.z,
+  };
+}
+
+function subtractScaled(
+  vector: Vector3,
+  direction: Vector3,
+  scale: number,
+): Vector3 {
+  return {
+    x: vector.x - direction.x * scale,
+    y: vector.y - direction.y * scale,
+    z: vector.z - direction.z * scale,
+  };
+}
+
+function normalize(vector: Vector3): Vector3 {
+  const length = Math.sqrt(dot(vector, vector));
+  return {
+    x: vector.x / length,
+    y: vector.y / length,
+    z: vector.z / length,
+  };
 }
 
 export interface PaintMark {

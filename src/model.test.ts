@@ -5,17 +5,18 @@ import { PaintDrop, Pendulum, Simulation } from "./model";
 describe("Pendulum", () => {
   it("evolves from known initial conditions", () => {
     const pendulum = new Pendulum(2, 0.1, Math.PI / 6, 0.2);
-    pendulum.step(0.01, 9.81);
+    const dt = 0.00001;
+    pendulum.step(dt, 9.81);
 
     const expectedAcceleration = -(9.81 / 2) * 0.5 - 0.1 * 0.2;
-    const expectedVelocity = 0.2 + expectedAcceleration * 0.01;
+    const expectedVelocity = 0.2 + expectedAcceleration * dt;
     expect(pendulum.angularVelocityRadiansPerSecond).toBeCloseTo(
       expectedVelocity,
-      12,
+      8,
     );
     expect(pendulum.angleRadians).toBeCloseTo(
-      Math.PI / 6 + expectedVelocity * 0.01,
-      12,
+      Math.PI / 6 + expectedVelocity * dt,
+      8,
     );
   });
 
@@ -38,6 +39,20 @@ describe("Pendulum", () => {
     expect(Math.max(...lateDampedAngles)).toBeLessThan(
       Math.max(...lateUndampedAngles) * 0.3,
     );
+  });
+
+  it("does not gain unbounded energy without damping", () => {
+    const pendulum = new Pendulum(1, 0, 0.9, 0, 0, 1.35);
+    const initialEnergy = pendulum.specificMechanicalEnergy(9.81);
+    let maximumEnergy = initialEnergy;
+    for (let index = 0; index < 2_400; index += 1) {
+      pendulum.step(1 / 120, 9.81);
+      maximumEnergy = Math.max(
+        maximumEnergy,
+        pendulum.specificMechanicalEnergy(9.81),
+      );
+    }
+    expect(maximumEnergy).toBeLessThan(initialEnergy * 1.03);
   });
 });
 
@@ -103,5 +118,39 @@ describe("Simulation determinism", () => {
     while (simulation.status !== "complete") simulation.step();
     expect(simulation.elapsedSeconds).toBeCloseTo(0.02, 12);
     expect(simulation.drops).toHaveLength(0);
+  });
+
+  it("keeps the full default run finite through vertical crossings", () => {
+    const simulation = new Simulation(defaultConfig);
+    simulation.start();
+    for (
+      let step = 0;
+      step < 3_000 && simulation.status !== "complete";
+      step += 1
+    ) {
+      simulation.step();
+      const stateValues = [
+        simulation.pendulum.angleRadians,
+        simulation.pendulum.angularVelocityRadiansPerSecond,
+        simulation.pendulum.azimuthRadians,
+        simulation.pendulum.azimuthalVelocityRadiansPerSecond,
+        ...simulation.drops.flatMap((drop) => [
+          drop.position.xMeters,
+          drop.position.yMeters,
+          drop.position.zMeters,
+          drop.velocity.xMetersPerSecond,
+          drop.velocity.yMetersPerSecond,
+          drop.velocity.zMetersPerSecond,
+        ]),
+      ];
+      expect(stateValues.every(Number.isFinite)).toBe(true);
+    }
+    expect(simulation.status).toBe("complete");
+    expect(simulation.canvas.marks.length).toBeGreaterThan(100);
+    expect(
+      simulation.canvas.marks.every((mark) =>
+        [mark.xMeters, mark.zMeters, mark.radiusMeters].every(Number.isFinite),
+      ),
+    ).toBe(true);
   });
 });

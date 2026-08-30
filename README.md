@@ -24,14 +24,13 @@ npm run preview
 
 ## Model
 
-The pendulum uses inclination `θ` and azimuth `φ`:
+The pendulum stores a Cartesian unit arm direction `q` and its tangent velocity `q′`:
 
 ```text
-θ″ = sin(θ) cos(θ) φ′² - (g/L) sin(θ) - cθ′
-φ″ = -2 cot(θ) θ′φ′ - cφ′
+q″ = (g/L)(down - (down · q)q) - c q′ - |q′|²q
 ```
 
-It is integrated with semi-implicit Euler at a fixed 1/120-second timestep. Rendering uses `requestAnimationFrame` independently and may perform multiple physics steps per frame.
+It is integrated with fourth-order Runge-Kutta at a fixed 1/120-second timestep. After each step, `q` is normalized and radial velocity is removed to maintain the rigid-arm constraint. Cartesian state avoids the inclination/azimuth singularity when the bob crosses directly beneath the pivot, while RK4 limits artificial energy drift. Rendering uses `requestAnimationFrame` independently and may perform multiple physics steps per frame.
 
 Each drop begins at the paint container with both of its current horizontal velocity components and zero vertical velocity. It then follows constant-gravity ballistic motion without air resistance. The exact positive root of the height equation determines when it intersects the canvas, avoiding timestep-sized landing errors. A seeded Mulberry32 generator supplies small symmetric variations in mark radius and both landing coordinates.
 

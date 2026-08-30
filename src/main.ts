@@ -18,7 +18,8 @@ app.innerHTML = `
     <section class="workspace">
       <aside class="panel" aria-label="Simulation controls">
         <form id="controls">
-          <div class="field"><label for="angle">Initial angle <output id="angle-value"></output></label><input id="angle" name="initialAngleDegrees" type="range" min="5" max="80" step="1"></div>
+          <div class="field"><label for="angle">Initial inclination <output id="angle-value"></output></label><input id="angle" name="initialAngleDegrees" type="range" min="5" max="80" step="1"></div>
+          <div class="field"><label for="azimuth">Initial azimuth <output id="azimuth-value"></output></label><input id="azimuth" name="initialAzimuthDegrees" type="range" min="-180" max="180" step="1"></div>
           <div class="field"><label for="orbit">Orbit speed <output id="orbit-value"></output></label><input id="orbit" name="azimuthalVelocityRadiansPerSecond" type="range" min="-3" max="3" step="0.05"></div>
           <div class="field"><label for="length">Length (m)</label><input id="length" name="pendulumLengthMeters" type="number" min="0.4" max="1.5" step="0.05"></div>
           <div class="field"><label for="damping">Damping (s⁻¹)</label><input id="damping" name="dampingPerSecond" type="number" min="0" max="1" step="0.005"></div>
@@ -50,6 +51,7 @@ const input = (name: keyof SimulationConfig) =>
 function populateForm(config: SimulationConfig): void {
   const editable: Array<keyof SimulationConfig> = [
     "initialAngleDegrees",
+    "initialAzimuthDegrees",
     "azimuthalVelocityRadiansPerSecond",
     "pendulumLengthMeters",
     "dampingPerSecond",
@@ -66,6 +68,8 @@ function populateForm(config: SimulationConfig): void {
 function updateOutputs(): void {
   document.querySelector("#angle-value")!.textContent =
     `${input("initialAngleDegrees").value}°`;
+  document.querySelector("#azimuth-value")!.textContent =
+    `${input("initialAzimuthDegrees").value}°`;
   document.querySelector("#randomness-value")!.textContent =
     `${Math.round(Number(input("randomness").value) * 100)}%`;
   document.querySelector("#orbit-value")!.textContent =
@@ -76,6 +80,7 @@ function configFromForm(): SimulationConfig | null {
   const config: SimulationConfig = {
     ...defaultConfig,
     initialAngleDegrees: Number(input("initialAngleDegrees").value),
+    initialAzimuthDegrees: Number(input("initialAzimuthDegrees").value),
     azimuthalVelocityRadiansPerSecond: Number(
       input("azimuthalVelocityRadiansPerSecond").value,
     ),

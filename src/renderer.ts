@@ -29,18 +29,27 @@ export class Renderer {
     const ctx = this.context;
     const { config } = simulation;
     const margin = 34;
-    const paintingHeight = Math.min(150, Math.max(96, this.cssHeight * 0.22));
-    const paintingTop = this.cssHeight - margin - paintingHeight;
-    const worldHeight = config.pivotHeightMeters + 0.32;
-    const scale = Math.min(
+    const paintingRegionTop = this.cssHeight * 0.56;
+    const paintingAvailableHeight = this.cssHeight - paintingRegionTop - margin;
+    const paintingScale = Math.min(
       (this.cssWidth - margin * 2) / config.canvasWidthMeters,
-      (paintingTop - margin) / worldHeight,
+      paintingAvailableHeight / config.canvasDepthMeters,
+    );
+    const paintingWidth = config.canvasWidthMeters * paintingScale;
+    const paintingHeight = config.canvasDepthMeters * paintingScale;
+    const paintingLeft = (this.cssWidth - paintingWidth) / 2;
+    const paintingTop =
+      paintingRegionTop + (paintingAvailableHeight - paintingHeight) / 2;
+    const canvasY = paintingRegionTop - 18;
+    const worldHeight = config.pivotHeightMeters + 0.32;
+    const physicsScale = Math.min(
+      (this.cssWidth - margin * 2) / config.canvasWidthMeters,
+      (canvasY - margin) / worldHeight,
     );
     const centerX = this.cssWidth / 2;
-    const canvasY = paintingTop;
     const toScreen = (xMeters: number, yMeters: number): [number, number] => [
-      centerX + xMeters * scale,
-      canvasY - yMeters * scale,
+      centerX + xMeters * physicsScale,
+      canvasY - yMeters * physicsScale,
     ];
 
     ctx.clearRect(0, 0, this.cssWidth, this.cssHeight);
@@ -58,13 +67,12 @@ export class Renderer {
     ctx.fillStyle = glow;
     ctx.fillRect(0, 0, this.cssWidth, this.cssHeight);
 
-    const canvasWidth = config.canvasWidthMeters * scale;
-    const canvasLeft = centerX - canvasWidth / 2;
+    const physicsCanvasWidth = config.canvasWidthMeters * physicsScale;
+    const physicsCanvasLeft = centerX - physicsCanvasWidth / 2;
     ctx.fillStyle = "rgba(247, 243, 232, 0.08)";
-    ctx.fillRect(canvasLeft, canvasY - 2, canvasWidth, 4);
+    ctx.fillRect(physicsCanvasLeft, canvasY - 2, physicsCanvasWidth, 4);
 
-    // The lower strip is a top-down view of the horizontal painting surface.
-    // Its vertical depth is visual only; impact x remains the calculated model value.
+    // The full physical canvas is fitted below at its true width/depth ratio.
     const paperGradient = ctx.createLinearGradient(
       0,
       paintingTop,
@@ -75,13 +83,7 @@ export class Renderer {
     paperGradient.addColorStop(1, "#e8e1d2");
     ctx.fillStyle = paperGradient;
     ctx.beginPath();
-    ctx.roundRect(
-      canvasLeft,
-      paintingTop + 7,
-      canvasWidth,
-      paintingHeight - 7,
-      8,
-    );
+    ctx.roundRect(paintingLeft, paintingTop, paintingWidth, paintingHeight, 8);
     ctx.fill();
     ctx.strokeStyle = "rgba(255,255,255,0.5)";
     ctx.lineWidth = 1;
@@ -92,16 +94,15 @@ export class Renderer {
     ctx.letterSpacing = "0.12em";
     ctx.fillText(
       "PAINTING SURFACE · TOP VIEW",
-      canvasLeft + 12,
-      paintingTop + 24,
+      paintingLeft + 12,
+      paintingTop + 17,
     );
 
-    const paintingScaleZ = (paintingHeight * 0.72) / config.canvasDepthMeters;
     for (const [index, mark] of simulation.canvas.marks.entries()) {
-      const [x] = toScreen(mark.xMeters, 0);
-      const radius = Math.max(4, mark.radiusMeters * scale * 1.9);
+      const x = centerX + mark.xMeters * paintingScale;
+      const radius = Math.max(4, mark.radiusMeters * paintingScale * 1.9);
       const paintY =
-        paintingTop + paintingHeight * 0.57 + mark.zMeters * paintingScaleZ;
+        paintingTop + paintingHeight / 2 + mark.zMeters * paintingScale;
       ctx.fillStyle = mark.color;
       ctx.globalAlpha = 0.68;
       ctx.beginPath();
@@ -127,7 +128,7 @@ export class Renderer {
       ctx.arc(
         x,
         y,
-        Math.max(2, drop.radiusMeters * scale * 0.65),
+        Math.max(2, drop.radiusMeters * physicsScale * 0.65),
         0,
         Math.PI * 2,
       );
