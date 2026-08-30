@@ -530,7 +530,7 @@ export class Simulation {
       config.pendulumLengthMeters,
       config.dampingPerSecond,
       (config.initialAngleDegrees * Math.PI) / 180,
-      0,
+      config.initialAngularVelocityRadiansPerSecond,
       (config.initialAzimuthDegrees * Math.PI) / 180,
       config.azimuthalVelocityRadiansPerSecond,
     );

@@ -30,6 +30,7 @@ app.innerHTML = `
           <form id="pendulum-form">
             <div class="field"><label for="angle">Initial inclination <output id="angle-value"></output></label><input id="angle" name="initialInclinationDegrees" type="range" min="5" max="80" step="1"></div>
             <div class="field"><label for="azimuth">Initial azimuth <output id="azimuth-value"></output></label><input id="azimuth" name="initialAzimuthDegrees" type="range" min="-180" max="180" step="1"></div>
+            <div class="field"><label for="swing-speed">Initial swing speed <output id="swing-speed-value"></output></label><input id="swing-speed" name="initialSwingSpeedRadiansPerSecond" type="range" min="-5" max="5" step="0.05"></div>
             <div class="field"><label for="orbit">Orbit speed <output id="orbit-value"></output></label><input id="orbit" name="initialOrbitSpeedRadiansPerSecond" type="range" min="-3" max="3" step="0.05"></div>
             <div class="field field-pair"><div><label for="length">Length (m) <output id="length-limit"></output></label><input id="length" name="lengthMeters" type="number" min="0.4" step="0.05"></div><div><label for="damping">Damping (s⁻¹)</label><input id="damping" name="dampingPerSecond" type="number" min="0" max="1" step="0.005"></div></div>
             <div class="field field-triple"><div><label for="position-x">X (m)</label><input id="position-x" name="positionXMeters" type="number" min="-10" max="10" step="0.1"></div><div><label for="position-y">Y (m)</label><input id="position-y" name="positionYMeters" type="number" min="-10" max="10" step="0.1"></div><div><label for="position-z">Z / height (m)</label><input id="position-z" name="positionZMeters" type="number" min="-1" max="10" step="0.1"></div></div>
@@ -116,6 +117,7 @@ function populatePendulum(config: PendulumConfig): void {
     "lengthMeters",
     "initialInclinationDegrees",
     "initialAzimuthDegrees",
+    "initialSwingSpeedRadiansPerSecond",
     "initialOrbitSpeedRadiansPerSecond",
     "dampingPerSecond",
     "initialPaintMilliliters",
@@ -165,6 +167,8 @@ function updateOutputs(): void {
     `${field("initialAzimuthDegrees").value}°`;
   element("#orbit-value").textContent =
     `${Number(field("initialOrbitSpeedRadiansPerSecond").value).toFixed(2)} rad/s`;
+  element("#swing-speed-value").textContent =
+    `${Number(field("initialSwingSpeedRadiansPerSecond").value).toFixed(2)} rad/s`;
   element("#randomness-value").textContent =
     `${Math.round(Number(field("randomness").value) * 100)}%`;
   element("#size-variation-value").textContent =
@@ -180,6 +184,9 @@ function pendulumFromForm(): PendulumConfig {
     lengthMeters: Number(field("lengthMeters").value),
     initialInclinationDegrees: Number(field("initialInclinationDegrees").value),
     initialAzimuthDegrees: Number(field("initialAzimuthDegrees").value),
+    initialSwingSpeedRadiansPerSecond: Number(
+      field("initialSwingSpeedRadiansPerSecond").value,
+    ),
     initialOrbitSpeedRadiansPerSecond: Number(
       field("initialOrbitSpeedRadiansPerSecond").value,
     ),

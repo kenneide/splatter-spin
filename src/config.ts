@@ -2,6 +2,7 @@ export interface SimulationConfig {
   paintMode: "drops" | "flow";
   initialAngleDegrees: number;
   initialAzimuthDegrees: number;
+  initialAngularVelocityRadiansPerSecond: number;
   azimuthalVelocityRadiansPerSecond: number;
   pendulumLengthMeters: number;
   dampingPerSecond: number;
@@ -42,6 +43,7 @@ export interface PendulumConfig {
   lengthMeters: number;
   initialInclinationDegrees: number;
   initialAzimuthDegrees: number;
+  initialSwingSpeedRadiansPerSecond: number;
   initialOrbitSpeedRadiansPerSecond: number;
   dampingPerSecond: number;
   initialPaintMilliliters: number;
@@ -66,6 +68,7 @@ export const defaultConfig: SimulationConfig = {
   paintMode: "drops",
   initialAngleDegrees: 52,
   initialAzimuthDegrees: 0,
+  initialAngularVelocityRadiansPerSecond: 0,
   azimuthalVelocityRadiansPerSecond: 1.35,
   pendulumLengthMeters: 1,
   dampingPerSecond: 0.075,
@@ -106,6 +109,8 @@ export const defaultPendulumConfig: PendulumConfig = {
   lengthMeters: defaultConfig.pendulumLengthMeters,
   initialInclinationDegrees: defaultConfig.initialAngleDegrees,
   initialAzimuthDegrees: defaultConfig.initialAzimuthDegrees,
+  initialSwingSpeedRadiansPerSecond:
+    defaultConfig.initialAngularVelocityRadiansPerSecond,
   initialOrbitSpeedRadiansPerSecond:
     defaultConfig.azimuthalVelocityRadiansPerSecond,
   dampingPerSecond: defaultConfig.dampingPerSecond,
@@ -137,6 +142,8 @@ export function simulationConfigForPendulum(
     paintMode: pendulum.paintMode,
     initialAngleDegrees: pendulum.initialInclinationDegrees,
     initialAzimuthDegrees: pendulum.initialAzimuthDegrees,
+    initialAngularVelocityRadiansPerSecond:
+      pendulum.initialSwingSpeedRadiansPerSecond,
     azimuthalVelocityRadiansPerSecond:
       pendulum.initialOrbitSpeedRadiansPerSecond,
     pendulumLengthMeters: pendulum.lengthMeters,
@@ -324,6 +331,8 @@ function simulationToPendulumConfig(config: SimulationConfig): PendulumConfig {
     lengthMeters: config.pendulumLengthMeters,
     initialInclinationDegrees: config.initialAngleDegrees,
     initialAzimuthDegrees: config.initialAzimuthDegrees,
+    initialSwingSpeedRadiansPerSecond:
+      config.initialAngularVelocityRadiansPerSecond,
     initialOrbitSpeedRadiansPerSecond: config.azimuthalVelocityRadiansPerSecond,
     dampingPerSecond: config.dampingPerSecond,
     initialPaintMilliliters: config.initialPaintMilliliters,
