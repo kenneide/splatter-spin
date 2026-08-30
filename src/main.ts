@@ -57,7 +57,7 @@ app.innerHTML = `
           <div class="field field-pair"><div><label for="seed">Seed</label><input id="seed" type="number" step="1"></div><div><label for="duration">Duration (s)</label><input id="duration" type="number" min="1" max="300" step="1"></div></div>
           <p id="form-error" class="error" role="alert"></p>
           <div class="actions"><button id="start" type="button" class="primary">Start</button><button id="reset" type="button">Reset</button></div>
-          <div class="config-actions"><button id="save-config" type="button">Save JSON</button><button id="load-config" type="button">Load JSON</button><button id="save-artwork" type="button">Save artwork PNG · 4K</button><input id="config-file" type="file" accept="application/json,.json" hidden></div>
+          <div class="config-actions"><button id="save-config" type="button">Save JSON</button><button id="load-config" type="button">Load JSON</button><button id="share-link" type="button">Copy share link</button><button id="save-artwork" type="button">Save artwork PNG · 4K</button><input id="config-file" type="file" accept="application/json,.json" hidden></div>
         </section>
       </aside>
       <div class="stage-card">
@@ -72,12 +72,42 @@ const canvas = document.querySelector<HTMLCanvasElement>("#stage")!;
 const renderer = new Renderer(canvas);
 function initialProjectConfig(): ProjectConfig {
   try {
+    const shared = readProjectFromUrl();
+    if (shared) return shared;
     // Keep the richer example in one editable, portable JSON file.
     return parseProjectConfigJson(JSON.stringify(exampleProjectJson));
   } catch {
     // A bundled fallback keeps the UI usable if the example is malformed.
     return cloneSerializable(defaultProjectConfig);
   }
+}
+
+function readProjectFromUrl(): ProjectConfig | null {
+  const prefix = "#project=";
+  if (!window.location.hash.startsWith(prefix)) return null;
+  try {
+    const encoded = window.location.hash.slice(prefix.length);
+    const padded = encoded + "=".repeat((4 - (encoded.length % 4)) % 4);
+    const json = decodeURIComponent(
+      Array.from(
+        atob(padded.replace(/-/g, "+").replace(/_/g, "/")),
+        (character) =>
+          `%${character.charCodeAt(0).toString(16).padStart(2, "0")}`,
+      ).join(""),
+    );
+    return parseProjectConfigJson(json);
+  } catch {
+    return null;
+  }
+}
+
+function projectUrl(projectConfig: ProjectConfig): string {
+  const json = JSON.stringify(projectConfig);
+  const encoded = btoa(json)
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
+  return `${window.location.origin}${window.location.pathname}#project=${encoded}`;
 }
 
 let project: ProjectConfig = initialProjectConfig();
@@ -375,6 +405,25 @@ const configFileInput = element<HTMLInputElement>("#config-file");
 element("#load-config").addEventListener("click", () =>
   configFileInput.click(),
 );
+
+element("#share-link").addEventListener("click", async () => {
+  if (!commitControls()) return;
+  const url = projectUrl(project);
+  window.history.replaceState(null, "", url);
+  try {
+    await navigator.clipboard.writeText(url);
+    element<HTMLButtonElement>("#share-link").textContent = "Link copied!";
+    window.setTimeout(
+      () =>
+        (element<HTMLButtonElement>("#share-link").textContent =
+          "Copy share link"),
+      1600,
+    );
+  } catch {
+    element("#form-error").textContent =
+      "Share URL created in the address bar; copy it manually.";
+  }
+});
 configFileInput.addEventListener("change", async () => {
   const file = configFileInput.files?.[0];
   if (!file) return;
