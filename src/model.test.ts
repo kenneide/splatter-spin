@@ -118,6 +118,22 @@ describe("Simulation determinism", () => {
     expect(simulation.canvas.marks).toHaveLength(0);
   });
 
+  it("varies flow thickness deterministically by seed", () => {
+    const make = (seed: number) => {
+      const simulation = new Simulation({
+        ...defaultConfig,
+        paintMode: "flow",
+        seed,
+        durationSeconds: 0.2,
+      });
+      simulation.start();
+      for (let step = 0; step < 20; step += 1) simulation.step();
+      return simulation.canvas.strokes.map((stroke) => stroke.widthMeters);
+    };
+    expect(make(7)).toEqual(make(7));
+    expect(make(7)).not.toEqual(make(8));
+  });
+
   it("samples a bounded deterministic future projection", () => {
     const config = {
       ...defaultConfig,

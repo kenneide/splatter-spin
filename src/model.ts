@@ -482,6 +482,20 @@ export class PaintSource {
     );
   }
 
+  flowWidthMeters(): number {
+    const baseWidthMeters = Math.max(
+      0.002,
+      (this.config.holeDiameterMillimeters / 1000) * 0.75,
+    );
+    // Small seeded fluctuations make a continuous line feel fluid rather
+    // than mechanically uniform while preserving deterministic replay.
+    return Math.max(
+      0.001,
+      baseWidthMeters *
+        (1 + this.random.signed() * 0.55 * this.config.dropSizeVariation),
+    );
+  }
+
   private currentFlowCubicMetersPerSecond(): number {
     if (this.remainingPaintCubicMeters <= 0) return 0;
     const headMeters =
@@ -560,10 +574,7 @@ export class Simulation {
             z1Meters: this.lastFlowPoint.zMeters,
             x2Meters: nextPoint.xMeters,
             z2Meters: nextPoint.zMeters,
-            widthMeters: Math.max(
-              0.002,
-              (this.config.holeDiameterMillimeters / 1000) * 0.75,
-            ),
+            widthMeters: this.paintSource.flowWidthMeters(),
             color: this.config.paintColor,
           });
         this.lastFlowPoint = nextPoint;
