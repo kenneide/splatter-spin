@@ -22,6 +22,8 @@ export interface SimulationConfig {
   dropletVolumeMilliliters: number;
   referenceDropletVolumeMilliliters: number;
   maximumRenderedDropsPerStep: number;
+  pivotOffsetXMeters: number;
+  pivotOffsetZMeters: number;
 }
 
 export interface CanvasConfig {
@@ -41,6 +43,8 @@ export interface PendulumConfig {
   holeDiameterMillimeters: number;
   dropletVolumeMilliliters: number;
   randomness: number;
+  positionXMeters: number;
+  positionYMeters: number;
 }
 
 export interface ProjectConfig {
@@ -75,6 +79,8 @@ export const defaultConfig: SimulationConfig = {
   dropletVolumeMilliliters: 0.01,
   referenceDropletVolumeMilliliters: 0.01,
   maximumRenderedDropsPerStep: 24,
+  pivotOffsetXMeters: 0,
+  pivotOffsetZMeters: 0,
 };
 
 export const defaultCanvasConfig: CanvasConfig = {
@@ -95,6 +101,8 @@ export const defaultPendulumConfig: PendulumConfig = {
   holeDiameterMillimeters: defaultConfig.holeDiameterMillimeters,
   dropletVolumeMilliliters: defaultConfig.dropletVolumeMilliliters,
   randomness: defaultConfig.randomness,
+  positionXMeters: defaultConfig.pivotOffsetXMeters,
+  positionYMeters: defaultConfig.pivotOffsetZMeters,
 };
 
 export const defaultProjectConfig: ProjectConfig = {
@@ -127,6 +135,8 @@ export function simulationConfigForPendulum(
     seed: (project.seed + index) | 0,
     canvasWidthMeters: project.canvas.widthMeters,
     canvasDepthMeters: project.canvas.depthMeters,
+    pivotOffsetXMeters: pendulum.positionXMeters,
+    pivotOffsetZMeters: pendulum.positionYMeters,
   };
 }
 
@@ -160,6 +170,10 @@ export function validateConfig(config: SimulationConfig): string[] {
     errors.push("Initial direction must be finite.");
   if (!Number.isFinite(config.azimuthalVelocityRadiansPerSecond))
     errors.push("Orbit speed must be finite.");
+  if (!Number.isFinite(config.pivotOffsetXMeters))
+    errors.push("Pendulum X position must be finite.");
+  if (!Number.isFinite(config.pivotOffsetZMeters))
+    errors.push("Pendulum Y position must be finite.");
   if (
     !Number.isFinite(config.dampingPerSecond) ||
     config.dampingPerSecond < 0
@@ -281,5 +295,7 @@ function simulationToPendulumConfig(config: SimulationConfig): PendulumConfig {
     holeDiameterMillimeters: config.holeDiameterMillimeters,
     dropletVolumeMilliliters: config.dropletVolumeMilliliters,
     randomness: config.randomness,
+    positionXMeters: config.pivotOffsetXMeters,
+    positionYMeters: config.pivotOffsetZMeters,
   };
 }

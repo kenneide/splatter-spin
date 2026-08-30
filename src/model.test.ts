@@ -308,4 +308,22 @@ describe("configuration JSON", () => {
     expect(second.canvasWidthMeters).toBe(8);
     expect(second.canvasDepthMeters).toBe(6);
   });
+
+  it("translates projected impacts with the pendulum canvas position", () => {
+    const base = {
+      ...defaultConfig,
+      randomness: 0,
+      pivotOffsetXMeters: 0,
+      pivotOffsetZMeters: 0,
+    };
+    const shifted = {
+      ...base,
+      pivotOffsetXMeters: 0.35,
+      pivotOffsetZMeters: -0.2,
+    };
+    const originMark = projectInitialPaintMarks(base, 1)[0];
+    const shiftedMark = projectInitialPaintMarks(shifted, 1)[0];
+    expect(shiftedMark.xMeters - originMark.xMeters).toBeCloseTo(0.35, 10);
+    expect(shiftedMark.zMeters - originMark.zMeters).toBeCloseTo(-0.2, 10);
+  });
 });

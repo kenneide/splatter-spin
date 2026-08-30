@@ -188,10 +188,16 @@ export class Renderer {
         ctx.fill();
       }
 
-    const [pivotX, pivotY] = toScreen(0, config.pivotHeightMeters);
     for (const item of simulations) {
+      const [pivotX, pivotY] = toScreen(
+        item.config.pivotOffsetXMeters,
+        item.config.pivotHeightMeters,
+      );
       const bob = item.pendulum.bobPosition(item.config.pivotHeightMeters);
-      const [bobX, bobY] = toScreen(bob.xMeters, bob.yMeters);
+      const [bobX, bobY] = toScreen(
+        bob.xMeters + item.config.pivotOffsetXMeters,
+        bob.yMeters,
+      );
       const flowFraction = item.paintSource.flowFraction;
       if (item.status === "running" && flowFraction > 0.08) {
         ctx.strokeStyle = item.config.paintColor;
@@ -220,14 +226,14 @@ export class Renderer {
       ctx.fillStyle = "rgba(20, 16, 36, 0.5)";
       ctx.fillRect(-9, -7, 18, 3);
       ctx.restore();
+      ctx.fillStyle = "#f7f3e8";
+      ctx.beginPath();
+      ctx.arc(pivotX, pivotY, 7, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = item.config.paintColor;
+      ctx.lineWidth = 3;
+      ctx.stroke();
     }
-    ctx.fillStyle = "#f7f3e8";
-    ctx.beginPath();
-    ctx.arc(pivotX, pivotY, 7, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = "#7c5cff";
-    ctx.lineWidth = 3;
-    ctx.stroke();
   }
 
   private drawPaintMarks(

@@ -30,6 +30,7 @@ app.innerHTML = `
             <div class="field"><label for="azimuth">Initial azimuth <output id="azimuth-value"></output></label><input id="azimuth" name="initialAzimuthDegrees" type="range" min="-180" max="180" step="1"></div>
             <div class="field"><label for="orbit">Orbit speed <output id="orbit-value"></output></label><input id="orbit" name="initialOrbitSpeedRadiansPerSecond" type="range" min="-3" max="3" step="0.05"></div>
             <div class="field field-pair"><div><label for="length">Length (m)</label><input id="length" name="lengthMeters" type="number" min="0.4" max="1.5" step="0.05"></div><div><label for="damping">Damping (s⁻¹)</label><input id="damping" name="dampingPerSecond" type="number" min="0" max="1" step="0.005"></div></div>
+            <div class="field field-pair"><div><label for="position-x">Position X (m)</label><input id="position-x" name="positionXMeters" type="number" min="-10" max="10" step="0.1"></div><div><label for="position-y">Position Y (m)</label><input id="position-y" name="positionYMeters" type="number" min="-10" max="10" step="0.1"></div></div>
             <div class="field field-pair"><div><label for="color">Paint</label><input id="color" name="paintColor" type="color"></div><div><label for="paint-amount">Paint (ml)</label><input id="paint-amount" name="initialPaintMilliliters" type="number" min="1" max="1000" step="5"></div></div>
             <div class="field"><label for="hole-size">Hole diameter (mm)</label><input id="hole-size" name="holeDiameterMillimeters" type="number" min="0.1" max="6" step="0.05"></div>
             <div class="field"><label for="drop-size">Drop size <output id="drop-size-value"></output></label><input id="drop-size" name="dropletVolumeMilliliters" type="range" min="-4" max="-1" step="0.05"></div>
@@ -100,6 +101,8 @@ function populatePendulum(config: PendulumConfig): void {
     "initialPaintMilliliters",
     "holeDiameterMillimeters",
     "randomness",
+    "positionXMeters",
+    "positionYMeters",
   ];
   for (const key of ordinary) field(key).value = String(config[key]);
   field("dropletVolumeMilliliters").value = String(
@@ -150,6 +153,8 @@ function pendulumFromForm(): PendulumConfig {
     dropletVolumeMilliliters:
       10 ** Number(field("dropletVolumeMilliliters").value),
     randomness: Number(field("randomness").value),
+    positionXMeters: Number(field("positionXMeters").value),
+    positionYMeters: Number(field("positionYMeters").value),
   };
 }
 
@@ -183,7 +188,7 @@ function renderPendulumList(): void {
     .map(
       (pendulum, index) => `
         <div class="pendulum-item ${index === selectedPendulumIndex ? "selected" : ""}" data-index="${index}">
-          <button type="button" class="select-pendulum" data-index="${index}"><i style="background:${pendulum.paintColor}"></i><span>Pendulum ${index + 1}</span><small>${pendulum.lengthMeters.toFixed(2)} m</small></button>
+          <button type="button" class="select-pendulum" data-index="${index}"><i style="background:${pendulum.paintColor}"></i><span>Pendulum ${index + 1}</span><small>${pendulum.positionXMeters.toFixed(1)}, ${pendulum.positionYMeters.toFixed(1)}</small></button>
           <button type="button" class="remove-pendulum" data-index="${index}" aria-label="Remove pendulum ${index + 1}">×</button>
         </div>`,
     )

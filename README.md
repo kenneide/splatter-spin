@@ -11,7 +11,7 @@ npm install
 npm run dev
 ```
 
-Open the local URL printed by Vite. The controls are grouped into Pendulums, Canvas, and Project sections. Select a listed pendulum to edit it live, use **Add another pendulum** to clone it into a new independently editable layer, and remove entries with ×. All listed pendulums run simultaneously when **Start** is selected.
+Open the local URL printed by Vite. The controls are grouped into Pendulums, Canvas, and Project sections. Select a listed pendulum to edit it live, position its pivot with canvas-plane X/Y coordinates, use **Add another pendulum** to clone it into a new independently editable layer, and remove entries with ×. All listed pendulums run simultaneously when **Start** is selected.
 
 Starting a fresh or completed run applies the current GUI values automatically. Pausing and starting an in-progress run resumes it without resetting.
 
@@ -42,7 +42,9 @@ Before a run starts, dashed rings project the first calculated impacts from ever
       "initialPaintMilliliters": 100,
       "holeDiameterMillimeters": 1.5,
       "dropletVolumeMilliliters": 0.01,
-      "randomness": 0.45
+      "randomness": 0.45,
+      "positionXMeters": 0,
+      "positionYMeters": 0
     }
   ]
 }
