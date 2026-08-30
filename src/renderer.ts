@@ -29,13 +29,15 @@ export class Renderer {
     const ctx = this.context;
     const { config } = simulation;
     const margin = 34;
+    const paintingHeight = Math.min(150, Math.max(96, this.cssHeight * 0.22));
+    const paintingTop = this.cssHeight - margin - paintingHeight;
     const worldHeight = config.pivotHeightMeters + 0.32;
     const scale = Math.min(
       (this.cssWidth - margin * 2) / config.canvasWidthMeters,
-      (this.cssHeight - margin * 2) / worldHeight,
+      (paintingTop - margin) / worldHeight,
     );
     const centerX = this.cssWidth / 2;
-    const canvasY = this.cssHeight - margin;
+    const canvasY = paintingTop;
     const toScreen = (xMeters: number, yMeters: number): [number, number] => [
       centerX + xMeters * scale,
       canvasY - yMeters * scale,
@@ -56,20 +58,65 @@ export class Renderer {
     ctx.fillStyle = glow;
     ctx.fillRect(0, 0, this.cssWidth, this.cssHeight);
 
-    const canvasLeft = centerX - (config.canvasWidthMeters * scale) / 2;
-    ctx.fillStyle = "#f7f3e8";
-    ctx.fillRect(canvasLeft, canvasY, config.canvasWidthMeters * scale, 8);
+    const canvasWidth = config.canvasWidthMeters * scale;
+    const canvasLeft = centerX - canvasWidth / 2;
+    ctx.fillStyle = "rgba(247, 243, 232, 0.08)";
+    ctx.fillRect(canvasLeft, canvasY - 2, canvasWidth, 4);
+
+    // The lower strip is a top-down view of the horizontal painting surface.
+    // Its vertical depth is visual only; impact x remains the calculated model value.
+    const paperGradient = ctx.createLinearGradient(
+      0,
+      paintingTop,
+      0,
+      paintingTop + paintingHeight,
+    );
+    paperGradient.addColorStop(0, "#fffdf6");
+    paperGradient.addColorStop(1, "#e8e1d2");
+    ctx.fillStyle = paperGradient;
+    ctx.beginPath();
+    ctx.roundRect(
+      canvasLeft,
+      paintingTop + 7,
+      canvasWidth,
+      paintingHeight - 7,
+      8,
+    );
+    ctx.fill();
     ctx.strokeStyle = "rgba(255,255,255,0.5)";
     ctx.lineWidth = 1;
-    ctx.strokeRect(canvasLeft, canvasY, config.canvasWidthMeters * scale, 8);
+    ctx.stroke();
 
-    for (const mark of simulation.canvas.marks) {
-      const [x, y] = toScreen(mark.xMeters, 0);
-      const radius = Math.max(2.5, mark.radiusMeters * scale);
+    ctx.fillStyle = "rgba(36, 30, 47, 0.48)";
+    ctx.font = "600 9px Inter, sans-serif";
+    ctx.letterSpacing = "0.12em";
+    ctx.fillText(
+      "PAINTING SURFACE · TOP VIEW",
+      canvasLeft + 12,
+      paintingTop + 24,
+    );
+
+    for (const [index, mark] of simulation.canvas.marks.entries()) {
+      const [x] = toScreen(mark.xMeters, 0);
+      const radius = Math.max(4, mark.radiusMeters * scale * 1.9);
+      const paintY =
+        paintingTop +
+        paintingHeight * 0.57 +
+        Math.sin(index * 2.399 + mark.xMeters * 5.7) * paintingHeight * 0.2;
       ctx.fillStyle = mark.color;
-      ctx.globalAlpha = 0.82;
+      ctx.globalAlpha = 0.68;
       ctx.beginPath();
-      ctx.ellipse(x, y + 1, radius * 1.35, radius * 0.44, 0, 0, Math.PI * 2);
+      ctx.arc(x, paintY, radius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 0.28;
+      ctx.beginPath();
+      ctx.arc(
+        x + Math.cos(index * 4.17) * radius * 0.9,
+        paintY + Math.sin(index * 3.31) * radius * 0.8,
+        radius * 0.42,
+        0,
+        Math.PI * 2,
+      );
       ctx.fill();
       ctx.globalAlpha = 1;
     }
