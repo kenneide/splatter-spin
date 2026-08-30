@@ -1,6 +1,6 @@
 # Splatter Spin
 
-Splatter Spin is a deterministic, browser-based paint-pendulum simulation. A damped spherical pendulum carries a paint container, releases drops at a configured rate, and leaves permanent marks where their three-dimensional ballistic trajectories meet a horizontal canvas.
+Splatter Spin is a deterministic, browser-based paint-pendulum simulation. A damped spherical pendulum carries a draining paint container and leaves permanent marks where its three-dimensional paint trajectories meet a horizontal canvas.
 
 ## Run locally
 
@@ -12,6 +12,8 @@ npm run dev
 ```
 
 Open the local URL printed by Vite. Edit the controls and select **Rerun** to apply them. **Start/Pause** controls the current run; **Reset** clears it using the currently applied configuration.
+
+Initial inclination and azimuth set the starting arm direction, while orbit speed supplies rotation around the pivot. Paint amount sets the initial reservoir volume and hole diameter controls how quickly it drains.
 
 Useful checks:
 
@@ -34,9 +36,11 @@ It is integrated with fourth-order Runge-Kutta at a fixed 1/120-second timestep.
 
 Each drop begins at the paint container with both of its current horizontal velocity components and zero vertical velocity. It then follows constant-gravity ballistic motion without air resistance. The exact positive root of the height equation determines when it intersects the canvas, avoiding timestep-sized landing errors. A seeded Mulberry32 generator supplies small symmetric variations in mark radius and both landing coordinates.
 
+Reservoir outflow follows Torricelli's law, `Q = Cd Ahole √(2gh)`, using the remaining volume and a fixed container cross-section to determine paint head `h`. Emitted volume accumulates into fixed-volume droplets. The initially high flow appears as a continuous stream; as the paint head falls, the same-size droplets are released progressively farther apart. This models draining and cadence rather than detailed paint viscosity or surface tension.
+
 The configured duration controls pendulum motion and paint emission. Once it is reached, already-released drops continue until they hit the canvas; only then is the run complete.
 
-This is intentionally a simplified model: the arm is rigid and massless; the bob is a point mass; damping is linear in both angular coordinates; drops do not collide or experience drag; and marks are stylized rather than simulated fluid splashes. Marks landing outside the finite rectangular canvas are discarded.
+This is intentionally a simplified model: the arm is rigid and massless; the bob is a point mass; damping is linear; the paint is treated as an ideal fluid with a fixed discharge coefficient; drops do not collide or experience drag; and marks are stylized rather than simulated fluid splashes. Marks landing outside the finite rectangular canvas are discarded.
 
 ## Architecture
 

@@ -138,6 +138,17 @@ export class Renderer {
     const [pivotX, pivotY] = toScreen(0, config.pivotHeightMeters);
     const bob = simulation.pendulum.bobPosition(config.pivotHeightMeters);
     const [bobX, bobY] = toScreen(bob.xMeters, bob.yMeters);
+    const flowFraction = simulation.paintSource.flowFraction;
+    if (simulation.status === "running" && flowFraction > 0.08) {
+      ctx.strokeStyle = config.paintColor;
+      ctx.globalAlpha = 0.35 + flowFraction * 0.45;
+      ctx.lineWidth = 1 + flowFraction * 4;
+      ctx.beginPath();
+      ctx.moveTo(bobX, bobY + 11);
+      ctx.lineTo(bobX, bobY + 18 + flowFraction * 55);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
     ctx.strokeStyle = "#d8d4e8";
     ctx.lineWidth = 3;
     ctx.lineCap = "round";

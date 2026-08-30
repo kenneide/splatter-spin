@@ -24,7 +24,7 @@ app.innerHTML = `
           <div class="field"><label for="length">Length (m)</label><input id="length" name="pendulumLengthMeters" type="number" min="0.4" max="1.5" step="0.05"></div>
           <div class="field"><label for="damping">Damping (s⁻¹)</label><input id="damping" name="dampingPerSecond" type="number" min="0" max="1" step="0.005"></div>
           <div class="field field-pair"><div><label for="color">Paint</label><input id="color" name="paintColor" type="color"></div><div><label for="seed">Seed</label><input id="seed" name="seed" type="number" step="1"></div></div>
-          <div class="field"><label for="rate">Drops per second</label><input id="rate" name="dropsPerSecond" type="number" min="0.5" max="60" step="0.5"></div>
+          <div class="field field-pair"><div><label for="paint-amount">Paint (ml)</label><input id="paint-amount" name="initialPaintMilliliters" type="number" min="1" max="1000" step="5"></div><div><label for="hole-size">Hole (mm)</label><input id="hole-size" name="holeDiameterMillimeters" type="number" min="0.5" max="12" step="0.25"></div></div>
           <div class="field"><label for="duration">Duration (s)</label><input id="duration" name="durationSeconds" type="number" min="1" max="120" step="1"></div>
           <div class="field"><label for="randomness">Randomness <output id="randomness-value"></output></label><input id="randomness" name="randomness" type="range" min="0" max="1" step="0.01"></div>
           <p id="form-error" class="error" role="alert"></p>
@@ -33,7 +33,7 @@ app.innerHTML = `
       </aside>
       <div class="stage-card">
         <canvas id="stage" aria-label="Paint pendulum visualization"></canvas>
-        <div class="stats" aria-live="polite"><span><b id="time">0.0</b>s elapsed</span><span><b id="drops">0</b> falling</span><span><b id="marks">0</b> marks</span><span id="state" class="state">Paused</span></div>
+        <div class="stats" aria-live="polite"><span><b id="time">0.0</b>s elapsed</span><span><b id="paint-left">0</b>ml paint</span><span><b id="flow">0</b>ml/s</span><span><b id="drops">0</b> falling</span><span><b id="marks">0</b> marks</span><span id="state" class="state">Paused</span></div>
       </div>
     </section>
   </main>`;
@@ -56,7 +56,8 @@ function populateForm(config: SimulationConfig): void {
     "pendulumLengthMeters",
     "dampingPerSecond",
     "paintColor",
-    "dropsPerSecond",
+    "initialPaintMilliliters",
+    "holeDiameterMillimeters",
     "durationSeconds",
     "randomness",
     "seed",
@@ -87,7 +88,8 @@ function configFromForm(): SimulationConfig | null {
     pendulumLengthMeters: Number(input("pendulumLengthMeters").value),
     dampingPerSecond: Number(input("dampingPerSecond").value),
     paintColor: input("paintColor").value,
-    dropsPerSecond: Number(input("dropsPerSecond").value),
+    initialPaintMilliliters: Number(input("initialPaintMilliliters").value),
+    holeDiameterMillimeters: Number(input("holeDiameterMillimeters").value),
     durationSeconds: Number(input("durationSeconds").value),
     randomness: Number(input("randomness").value),
     seed: Number(input("seed").value),
@@ -126,6 +128,10 @@ function updateStatus(): void {
   document.querySelector("#drops")!.textContent = String(
     simulation.drops.length,
   );
+  document.querySelector("#paint-left")!.textContent =
+    simulation.paintSource.remainingPaintMilliliters.toFixed(1);
+  document.querySelector("#flow")!.textContent =
+    simulation.paintSource.flowRateMillilitersPerSecond.toFixed(1);
   document.querySelector("#marks")!.textContent = String(
     simulation.canvas.marks.length,
   );

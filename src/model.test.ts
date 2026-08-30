@@ -85,7 +85,6 @@ function runToCompletion(seed: number) {
     ...defaultConfig,
     seed,
     durationSeconds: 3,
-    dropsPerSecond: 8,
   });
   simulation.start();
   while (simulation.status !== "complete") simulation.step();
@@ -152,5 +151,40 @@ describe("Simulation determinism", () => {
         [mark.xMeters, mark.zMeters, mark.radiusMeters].every(Number.isFinite),
       ),
     ).toBe(true);
+  });
+});
+
+describe("Paint reservoir", () => {
+  it("slows as the paint head falls", () => {
+    const simulation = new Simulation({
+      ...defaultConfig,
+      durationSeconds: 12,
+      holeDiameterMillimeters: 7,
+    });
+    const initialFlow = simulation.paintSource.flowRateMillilitersPerSecond;
+    simulation.start();
+    for (let step = 0; step < 1_200; step += 1) simulation.step();
+
+    expect(simulation.paintSource.remainingPaintMilliliters).toBeLessThan(
+      defaultConfig.initialPaintMilliliters,
+    );
+    expect(simulation.paintSource.flowRateMillilitersPerSecond).toBeLessThan(
+      initialFlow,
+    );
+  });
+
+  it("flows faster through a larger hole", () => {
+    const small = new Simulation({
+      ...defaultConfig,
+      holeDiameterMillimeters: 2,
+    });
+    const large = new Simulation({
+      ...defaultConfig,
+      holeDiameterMillimeters: 4,
+    });
+    expect(large.paintSource.flowRateMillilitersPerSecond).toBeCloseTo(
+      small.paintSource.flowRateMillilitersPerSecond * 4,
+      10,
+    );
   });
 });

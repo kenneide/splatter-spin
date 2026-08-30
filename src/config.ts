@@ -5,7 +5,8 @@ export interface SimulationConfig {
   pendulumLengthMeters: number;
   dampingPerSecond: number;
   paintColor: string;
-  dropsPerSecond: number;
+  initialPaintMilliliters: number;
+  holeDiameterMillimeters: number;
   durationSeconds: number;
   randomness: number;
   seed: number;
@@ -16,6 +17,9 @@ export interface SimulationConfig {
   canvasDepthMeters: number;
   baseDropRadiusMeters: number;
   maximumScatterMeters: number;
+  reservoirAreaSquareMeters: number;
+  dischargeCoefficient: number;
+  dropletVolumeMilliliters: number;
 }
 
 export const defaultConfig: SimulationConfig = {
@@ -25,8 +29,9 @@ export const defaultConfig: SimulationConfig = {
   pendulumLengthMeters: 1,
   dampingPerSecond: 0.075,
   paintColor: "#ff3b72",
-  dropsPerSecond: 12,
-  durationSeconds: 18,
+  initialPaintMilliliters: 100,
+  holeDiameterMillimeters: 5.5,
+  durationSeconds: 24,
   randomness: 0.45,
   seed: 2026,
   gravityMetersPerSecondSquared: 9.81,
@@ -36,13 +41,17 @@ export const defaultConfig: SimulationConfig = {
   canvasDepthMeters: 2.4,
   baseDropRadiusMeters: 0.045,
   maximumScatterMeters: 0.1,
+  reservoirAreaSquareMeters: 0.005,
+  dischargeCoefficient: 0.62,
+  dropletVolumeMilliliters: 0.35,
 };
 
 export function validateConfig(config: SimulationConfig): string[] {
   const errors: string[] = [];
   const finitePositive: Array<[number, string]> = [
     [config.pendulumLengthMeters, "Pendulum length"],
-    [config.dropsPerSecond, "Drop rate"],
+    [config.initialPaintMilliliters, "Initial paint amount"],
+    [config.holeDiameterMillimeters, "Hole diameter"],
     [config.durationSeconds, "Duration"],
     [config.gravityMetersPerSecondSquared, "Gravity"],
     [config.fixedTimeStepSeconds, "Physics timestep"],
@@ -50,6 +59,9 @@ export function validateConfig(config: SimulationConfig): string[] {
     [config.canvasWidthMeters, "Canvas width"],
     [config.canvasDepthMeters, "Canvas depth"],
     [config.baseDropRadiusMeters, "Drop radius"],
+    [config.reservoirAreaSquareMeters, "Reservoir area"],
+    [config.dischargeCoefficient, "Discharge coefficient"],
+    [config.dropletVolumeMilliliters, "Droplet volume"],
   ];
 
   for (const [value, label] of finitePositive) {

@@ -351,20 +351,61 @@ export class PaintDrop {
 }
 
 export class PaintSource {
-  private secondsUntilNextDrop = 0;
+  private accumulatedPaintCubicMeters = 0;
+  private remainingPaintCubicMeters: number;
+  private readonly initialFlowCubicMetersPerSecond: number;
 
   constructor(
     private readonly config: SimulationConfig,
     private readonly random: SeededRandom,
-  ) {}
+  ) {
+    this.remainingPaintCubicMeters = config.initialPaintMilliliters * 1e-6;
+    this.initialFlowCubicMetersPerSecond =
+      this.currentFlowCubicMetersPerSecond();
+  }
+
+  get remainingPaintMilliliters(): number {
+    return this.remainingPaintCubicMeters * 1e6;
+  }
+
+  get flowRateMillilitersPerSecond(): number {
+    return this.currentFlowCubicMetersPerSecond() * 1e6;
+  }
+
+  get flowFraction(): number {
+    if (this.initialFlowCubicMetersPerSecond === 0) return 0;
+    return (
+      this.currentFlowCubicMetersPerSecond() /
+      this.initialFlowCubicMetersPerSecond
+    );
+  }
 
   emitForStep(dtSeconds: number, pendulum: Pendulum): PaintDrop[] {
     const emitted: PaintDrop[] = [];
-    this.secondsUntilNextDrop -= dtSeconds;
-    const intervalSeconds = 1 / this.config.dropsPerSecond;
-    while (this.secondsUntilNextDrop <= 1e-12) {
+    if (this.remainingPaintCubicMeters <= 0) return emitted;
+
+    // Torricelli outflow: Q = Cd Ahole sqrt(2gh). Head h falls with volume.
+    const emittedVolume = Math.min(
+      this.remainingPaintCubicMeters,
+      this.currentFlowCubicMetersPerSecond() * dtSeconds,
+    );
+    this.remainingPaintCubicMeters -= emittedVolume;
+    this.accumulatedPaintCubicMeters += emittedVolume;
+    const dropletVolume = this.config.dropletVolumeMilliliters * 1e-6;
+
+    while (
+      this.accumulatedPaintCubicMeters >= dropletVolume ||
+      (this.remainingPaintCubicMeters === 0 &&
+        this.accumulatedPaintCubicMeters > 0)
+    ) {
+      const releasedVolume = Math.min(
+        dropletVolume,
+        this.accumulatedPaintCubicMeters,
+      );
+      this.accumulatedPaintCubicMeters -= releasedVolume;
       const sizeFactor =
-        1 + this.random.signed() * 0.35 * this.config.randomness;
+        Math.cbrt(releasedVolume / dropletVolume) *
+        (1 + this.random.signed() * 0.35 * this.config.randomness);
       const scatterX =
         this.random.signed() *
         this.config.maximumScatterMeters *
@@ -389,9 +430,21 @@ export class PaintSource {
           scatterZ,
         ),
       );
-      this.secondsUntilNextDrop += intervalSeconds;
     }
     return emitted;
+  }
+
+  private currentFlowCubicMetersPerSecond(): number {
+    if (this.remainingPaintCubicMeters <= 0) return 0;
+    const headMeters =
+      this.remainingPaintCubicMeters / this.config.reservoirAreaSquareMeters;
+    const holeRadiusMeters = this.config.holeDiameterMillimeters / 2000;
+    const holeAreaSquareMeters = Math.PI * holeRadiusMeters ** 2;
+    return (
+      this.config.dischargeCoefficient *
+      holeAreaSquareMeters *
+      Math.sqrt(2 * this.config.gravityMetersPerSecondSquared * headMeters)
+    );
   }
 }
 
