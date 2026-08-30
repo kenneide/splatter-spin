@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { defaultConfig } from "./config";
+import { defaultConfig, parseSimulationConfigJson } from "./config";
 import {
   PaintDrop,
   Pendulum,
@@ -200,5 +200,33 @@ describe("Paint reservoir", () => {
       small.paintSource.flowRateMillilitersPerSecond * 4,
       10,
     );
+  });
+});
+
+describe("configuration JSON", () => {
+  it("round-trips a complete serializable configuration", () => {
+    expect(parseSimulationConfigJson(JSON.stringify(defaultConfig))).toEqual(
+      defaultConfig,
+    );
+  });
+
+  it("merges compatible partial configurations with current defaults", () => {
+    const config = parseSimulationConfigJson(
+      JSON.stringify({ initialAngleDegrees: 31, seed: 17 }),
+    );
+    expect(config).toEqual({
+      ...defaultConfig,
+      initialAngleDegrees: 31,
+      seed: 17,
+    });
+  });
+
+  it("rejects invalid configuration structures and values", () => {
+    expect(() => parseSimulationConfigJson("[]")).toThrow(
+      "must contain an object",
+    );
+    expect(() =>
+      parseSimulationConfigJson(JSON.stringify({ holeDiameterMillimeters: 0 })),
+    ).toThrow("Hole diameter must be positive");
   });
 });

@@ -126,6 +126,18 @@ input[type="color"] {
   gap: 7px;
   margin-top: 4px;
 }
+.config-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+  margin-top: 9px;
+}
+.config-actions button {
+  padding: 7px 5px;
+  color: #aaa4b9;
+  font-size: 0.74rem;
+  background: transparent;
+}
 button {
   border: 1px solid rgba(255, 255, 255, 0.13);
   border-radius: 9px;

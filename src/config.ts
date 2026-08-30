@@ -95,3 +95,14 @@ export function validateConfig(config: SimulationConfig): string[] {
   }
   return errors;
 }
+
+export function parseSimulationConfigJson(json: string): SimulationConfig {
+  const value: unknown = JSON.parse(json);
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    throw new Error("Configuration JSON must contain an object.");
+  }
+  const config = { ...defaultConfig, ...value } as SimulationConfig;
+  const errors = validateConfig(config);
+  if (errors.length > 0) throw new Error(errors[0]);
+  return config;
+}

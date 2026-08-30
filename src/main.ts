@@ -1,5 +1,10 @@
 import "./style.css";
-import { defaultConfig, validateConfig, type SimulationConfig } from "./config";
+import {
+  defaultConfig,
+  parseSimulationConfigJson,
+  validateConfig,
+  type SimulationConfig,
+} from "./config";
 import { projectInitialPaintMarks, Simulation } from "./model";
 import { Renderer } from "./renderer";
 
@@ -29,6 +34,7 @@ app.innerHTML = `
           <div class="field"><label for="randomness">Randomness <output id="randomness-value"></output></label><input id="randomness" name="randomness" type="range" min="0" max="1" step="0.01"></div>
           <p id="form-error" class="error" role="alert"></p>
           <div class="actions"><button id="start" type="button" class="primary">Start</button><button id="reset" type="button">Reset</button><button id="rerun" type="submit">Rerun</button></div>
+          <div class="config-actions"><button id="save-config" type="button">Save JSON</button><button id="load-config" type="button">Load JSON</button><input id="config-file" type="file" accept="application/json,.json" hidden></div>
         </form>
       </aside>
       <div class="stage-card">
@@ -43,6 +49,7 @@ const canvas = document.querySelector<HTMLCanvasElement>("#stage")!;
 const renderer = new Renderer(canvas);
 let simulation = new Simulation(defaultConfig);
 let projectedMarks = projectInitialPaintMarks(defaultConfig);
+let formBaseConfig = defaultConfig;
 let accumulatorSeconds = 0;
 let previousFrameMilliseconds = performance.now();
 let projectionUpdateTimer: number | undefined;
@@ -81,7 +88,7 @@ function updateOutputs(): void {
 
 function configFromForm(): SimulationConfig | null {
   const config: SimulationConfig = {
-    ...defaultConfig,
+    ...formBaseConfig,
     initialAngleDegrees: Number(input("initialAngleDegrees").value),
     initialAzimuthDegrees: Number(input("initialAzimuthDegrees").value),
     azimuthalVelocityRadiansPerSecond: Number(
@@ -123,14 +130,56 @@ form.addEventListener("submit", (event) => {
   if (config) replaceSimulation(config, true);
 });
 document.querySelector("#start")!.addEventListener("click", () => {
-  if (simulation.status === "running") simulation.pause();
-  else if (simulation.status === "complete")
-    replaceSimulation(simulation.config, true);
-  else simulation.start();
+  if (simulation.status === "running") {
+    simulation.pause();
+    return;
+  }
+  if (simulation.status === "paused" && simulation.elapsedSeconds > 0) {
+    simulation.start();
+    return;
+  }
+  const config = configFromForm();
+  if (config) replaceSimulation(config, true);
 });
 document
   .querySelector("#reset")!
   .addEventListener("click", () => replaceSimulation(simulation.config, false));
+
+document.querySelector("#save-config")!.addEventListener("click", () => {
+  const config = configFromForm();
+  if (!config) return;
+  const blob = new Blob([`${JSON.stringify(config, null, 2)}\n`], {
+    type: "application/json",
+  });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "splatter-spin-config.json";
+  link.click();
+  window.setTimeout(() => URL.revokeObjectURL(url), 0);
+});
+
+const configFileInput =
+  document.querySelector<HTMLInputElement>("#config-file")!;
+document
+  .querySelector("#load-config")!
+  .addEventListener("click", () => configFileInput.click());
+configFileInput.addEventListener("change", async () => {
+  const file = configFileInput.files?.[0];
+  if (!file) return;
+  try {
+    const config = parseSimulationConfigJson(await file.text());
+    formBaseConfig = config;
+    populateForm(config);
+    replaceSimulation(config, false);
+    document.querySelector("#form-error")!.textContent = "";
+  } catch (error) {
+    document.querySelector("#form-error")!.textContent =
+      error instanceof Error ? error.message : "Could not load configuration.";
+  } finally {
+    configFileInput.value = "";
+  }
+});
 
 function updateStatus(): void {
   document.querySelector("#time")!.textContent =
